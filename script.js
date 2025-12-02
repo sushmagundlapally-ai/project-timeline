@@ -5,166 +5,18 @@ let projectData = {
     workstreams: []
 };
 
-// Sample Data matching your format
-const sampleData = {
-    startMonth: new Date(2024, 11, 1),
-    endMonth: new Date(2025, 11, 1),
-    workstreams: [
-        {
-            id: 1,
-            name: "LE 1.0 BASIC IMPROVEMENTS (EMAIL ONLY)",
-            tasks: [
-                { id: 101, name: "Email engine improvements", priority: "P0", size: "L", start: "2024-12-01", end: "2025-01-15", risk: "high" },
-                { id: 102, name: "Athena Auth spike", priority: "P0", size: "S", start: "2024-12-01", end: "2024-12-14", risk: "high" }
-            ]
-        },
-        {
-            id: 2,
-            name: "FALCONIZATION OF LE",
-            tasks: [
-                { id: 201, name: "Falcon Dev Ready", priority: "P0", size: "L", start: "2024-12-01", end: "2025-01-31", risk: "high" },
-                { id: 202, name: "Fox Onboarding", priority: "P0", size: "M", start: "2025-01-01", end: "2025-02-15", risk: "high" },
-                { id: 203, name: "Prod-ready + release pathing", priority: "P0", size: "M", start: "2025-02-01", end: "2025-03-15", risk: "high" }
-            ]
-        },
-        {
-            id: 3,
-            name: "LE HIPAA COMPLIANCY",
-            tasks: [
-                { id: 301, name: "HIPAA enablement", priority: "P0", size: "L", start: "2025-01-15", end: "2025-03-31", risk: "high" }
-            ]
-        },
-        {
-            id: 4,
-            name: "LE INTEGRATION WITH AGENTFORCE",
-            tasks: [
-                { id: 401, name: "Push/pull config spike", priority: "P1", size: "M", start: "2024-12-01", end: "2025-01-15", risk: "medium" },
-                { id: 402, name: "Dev/Sandbox implementation", priority: "P1", size: "L", start: "2025-01-15", end: "2025-03-31", risk: "medium" },
-                { id: 403, name: "LE Agentforce UX", priority: "P2", size: "M", start: "2025-02-15", end: "2025-04-15", risk: "low" }
-            ]
-        },
-        {
-            id: 5,
-            name: "LE EVOLUTION 2.0 (PHASED)",
-            subgroups: [
-                {
-                    name: "5.a Improve Human-in-the-loop (HITL)",
-                    tasks: [
-                        { id: 501, name: "HITL UX", priority: "P2", size: "M", start: "2024-12-01", end: "2025-01-15", risk: "low" },
-                        { id: 502, name: "Strength escalation logic", priority: "P1", size: "M", start: "2024-12-01", end: "2025-01-15", risk: "medium" },
-                        { id: 503, name: "Automated testing (backend/frontend)", priority: "P1", size: "L", start: "2025-01-01", end: "2025-03-15", risk: "medium" },
-                        { id: 504, name: "Structured feedback loop", priority: "P2", size: "M", start: "2025-02-15", end: "2025-04-01", risk: "low" },
-                        { id: 505, name: "Holistic agent updates", priority: "P0", size: "L", start: "2025-04-01", end: "2025-06-30", risk: "high" }
-                    ]
-                },
-                {
-                    name: "5.b Pre-deployment Learning (Q2 scope)",
-                    tasks: [
-                        { id: 511, name: "Pre-deploy UX", priority: "P2", size: "M", start: "2025-05-01", end: "2025-06-15", risk: "low" },
-                        { id: 512, name: "Pre-deployment LE", priority: "P1", size: "L", start: "2025-05-01", end: "2025-07-31", risk: "medium" },
-                        { id: 513, name: "Automated testing (phase 2)", priority: "P1", size: "M", start: "2025-05-01", end: "2025-06-15", risk: "medium" },
-                        { id: 514, name: "Test on historical data", priority: "P1", size: "M", start: "2025-05-01", end: "2025-06-15", risk: "medium" },
-                        { id: 515, name: "Test on simulated data", priority: "P2", size: "M", start: "2025-06-15", end: "2025-08-01", risk: "low" }
-                    ]
-                },
-                {
-                    name: "5.c Agent-agnostic (Q3 scope)",
-                    tasks: [
-                        { id: 521, name: "Voice/text/email multi-modality", priority: "P2", size: "L", start: "2025-08-01", end: "2025-10-31", risk: "low" },
-                        { id: 522, name: "Works with non-AF agents", priority: "P2", size: "L", start: "2025-08-01", end: "2025-10-31", risk: "low" }
-                    ]
-                }
-            ]
-        },
-        {
-            id: 6,
-            name: "BILLING USE CASE EXPANSION",
-            subgroups: [
-                {
-                    name: "6.a Phase 1",
-                    tasks: [
-                        { id: 601, name: "Workflow mapping", priority: "P1", size: "M", start: "2024-12-01", end: "2025-01-15", risk: "medium" },
-                        { id: 602, name: "Annotation eval", priority: "P2", size: "M", start: "2025-01-01", end: "2025-02-15", risk: "low" },
-                        { id: 603, name: "Automated eval", priority: "P2", size: "M", start: "2025-01-01", end: "2025-02-15", risk: "low" },
-                        { id: 604, name: "Customer eval", priority: "P1", size: "L", start: "2025-02-15", end: "2025-04-30", risk: "medium" }
-                    ]
-                },
-                {
-                    name: "6.b Phase 2",
-                    tasks: [
-                        { id: 611, name: "Workflow mapping", priority: "P1", size: "M", start: "2025-04-01", end: "2025-05-15", risk: "medium" },
-                        { id: 612, name: "Annotation eval", priority: "P2", size: "M", start: "2025-05-15", end: "2025-06-30", risk: "low" },
-                        { id: 613, name: "Automated eval", priority: "P2", size: "M", start: "2025-05-15", end: "2025-06-30", risk: "low" },
-                        { id: 614, name: "Customer eval", priority: "P1", size: "L", start: "2025-07-01", end: "2025-09-15", risk: "medium" }
-                    ]
-                },
-                {
-                    name: "6.c Phase 3",
-                    tasks: [
-                        { id: 621, name: "Workflow mapping", priority: "P1", size: "M", start: "2025-08-01", end: "2025-09-15", risk: "medium" },
-                        { id: 622, name: "Annotation eval", priority: "P2", size: "M", start: "2025-09-15", end: "2025-10-31", risk: "low" },
-                        { id: 623, name: "Automated eval", priority: "P2", size: "M", start: "2025-09-15", end: "2025-10-31", risk: "low" },
-                        { id: 624, name: "Customer eval", priority: "P1", size: "L", start: "2025-11-01", end: "2025-12-31", risk: "medium" }
-                    ]
-                }
-            ]
-        },
-        {
-            id: 7,
-            name: "BILLING EMAIL AGENT ON AGENTFORCE",
-            tasks: [
-                { id: 701, name: "Gap assessment + architecture", priority: "P0", size: "L", start: "2025-01-01", end: "2025-03-15", risk: "high" },
-                { id: 702, name: "MVP Sandbox", priority: "P0", size: "L", start: "2025-02-15", end: "2025-05-15", risk: "high" },
-                { id: 703, name: "MVP Production", priority: "P0", size: "L", start: "2025-05-01", end: "2025-07-31", risk: "high" }
-            ]
-        },
-        {
-            id: 8,
-            name: "Data ETL: UCSF",
-            tasks: [
-                { id: 801, name: "Data ETL: UCSF", priority: "P1", size: "L", start: "2025-05-01", end: "2025-07-31", risk: "medium" }
-            ]
-        },
-        {
-            id: 9,
-            name: "UCSF APIs",
-            tasks: [
-                { id: 901, name: "UCSF APIs", priority: "P1", size: "L", start: "2025-05-01", end: "2025-07-31", risk: "medium" }
-            ]
-        },
-        {
-            id: 10,
-            name: "Billing Text Agent on Agentforce",
-            tasks: [
-                { id: 1001, name: "Billing Text Agent on Agentforce", priority: "P2", size: "L", start: "2025-06-15", end: "2025-09-30", risk: "low" }
-            ]
-        },
-        {
-            id: 11,
-            name: "Billing Voice Agent on Agentforce",
-            tasks: [
-                { id: 1101, name: "Billing Voice Agent on Agentforce", priority: "P2", size: "L", start: "2025-08-01", end: "2025-10-31", risk: "low" }
-            ]
-        },
-        {
-            id: 12,
-            name: "Parking Agent on Agentforce Voice",
-            tasks: [
-                { id: 1201, name: "Parking Agent on Agentforce Voice", priority: "P1", size: "L", start: "2025-05-01", end: "2025-07-31", risk: "medium" }
-            ]
-        },
-        {
-            id: 13,
-            name: "Automated evaluation by eval engine",
-            tasks: [
-                { id: 1301, name: "Automated evaluation by eval engine", priority: "P1", size: "M", start: "2025-01-15", end: "2025-03-31", risk: "medium" }
-            ]
-        }
-    ]
+// Edit mode state
+let editMode = true; // Always editable now
+
+// Empty default data - start fresh
+const emptyData = {
+    startMonth: new Date(2024, 11, 1), // December 2024
+    endMonth: new Date(2025, 11, 1),   // December 2025
+    workstreams: []
 };
 
-// Initialize with sample data
-projectData = sampleData;
+// Initialize with empty data
+projectData = emptyData;
 
 // Generate months array
 function getMonths() {
@@ -231,7 +83,87 @@ function getRiskIndicator(risk) {
     }
 }
 
-// Render a task row
+// Find task by ID
+function findTask(taskId) {
+    for (const ws of projectData.workstreams) {
+        if (ws.tasks) {
+            const task = ws.tasks.find(t => t.id === taskId);
+            if (task) return { task, workstream: ws };
+        }
+        if (ws.subgroups) {
+            for (const sg of ws.subgroups) {
+                const task = sg.tasks.find(t => t.id === taskId);
+                if (task) return { task, workstream: ws, subgroup: sg };
+            }
+        }
+    }
+    return null;
+}
+
+// Update task field
+function updateTask(taskId, field, value) {
+    const result = findTask(taskId);
+    if (result) {
+        result.task[field] = value;
+        saveData();
+        renderTimeline();
+        showToast('✅ Updated!');
+    }
+}
+
+// Delete task
+function deleteTask(taskId) {
+    if (!confirm('Delete this task?')) return;
+    
+    for (const ws of projectData.workstreams) {
+        if (ws.tasks) {
+            const idx = ws.tasks.findIndex(t => t.id === taskId);
+            if (idx !== -1) {
+                ws.tasks.splice(idx, 1);
+                saveData();
+                renderTimeline();
+                showToast('🗑️ Task deleted');
+                return;
+            }
+        }
+        if (ws.subgroups) {
+            for (const sg of ws.subgroups) {
+                const idx = sg.tasks.findIndex(t => t.id === taskId);
+                if (idx !== -1) {
+                    sg.tasks.splice(idx, 1);
+                    saveData();
+                    renderTimeline();
+                    showToast('🗑️ Task deleted');
+                    return;
+                }
+            }
+        }
+    }
+}
+
+// Delete workstream
+function deleteWorkstream(wsId) {
+    if (!confirm('Delete this workstream and all its tasks?')) return;
+    
+    const idx = projectData.workstreams.findIndex(ws => ws.id === wsId);
+    if (idx !== -1) {
+        projectData.workstreams.splice(idx, 1);
+        saveData();
+        renderTimeline();
+        showToast('🗑️ Workstream deleted');
+    }
+}
+
+// Update workstream name
+function updateWorkstreamName(wsId, newName) {
+    const ws = projectData.workstreams.find(w => w.id === wsId);
+    if (ws) {
+        ws.name = newName;
+        saveData();
+    }
+}
+
+// Render a task row with inline editing
 function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
     const pos = calculateBarPosition(task.start, task.end);
     const labelClass = isSubSubTask ? 'sub-sub-task' : (isSubTask ? 'sub-task' : '');
@@ -240,10 +172,35 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
     return `
         <div class="task-row" data-task-id="${task.id}">
             <div class="task-label ${labelClass}">
-                <span class="task-name">${escapeHtml(task.name)}</span>
+                <input type="text" class="inline-edit task-name-edit" value="${escapeHtml(task.name)}" 
+                       onchange="updateTask(${task.id}, 'name', this.value)" title="Click to edit name">
                 <div class="task-meta">
-                    <span class="priority-badge ${task.priority.toLowerCase()}">${task.priority}</span>
-                    <span class="size-badge">${task.size}</span>
+                    <input type="text" class="owner-input" value="${escapeHtml(task.owner || '')}" 
+                           placeholder="Owner" onchange="updateTask(${task.id}, 'owner', this.value)" title="Owner">
+                    <select class="inline-select priority-select ${task.priority.toLowerCase()}" 
+                            onchange="updateTask(${task.id}, 'priority', this.value)">
+                        <option value="P0" ${task.priority === 'P0' ? 'selected' : ''}>P0</option>
+                        <option value="P1" ${task.priority === 'P1' ? 'selected' : ''}>P1</option>
+                        <option value="P2" ${task.priority === 'P2' ? 'selected' : ''}>P2</option>
+                    </select>
+                    <select class="inline-select size-select" 
+                            onchange="updateTask(${task.id}, 'size', this.value)">
+                        <option value="S" ${task.size === 'S' ? 'selected' : ''}>S</option>
+                        <option value="M" ${task.size === 'M' ? 'selected' : ''}>M</option>
+                        <option value="L" ${task.size === 'L' ? 'selected' : ''}>L</option>
+                    </select>
+                    <input type="date" class="inline-date" value="${task.start}" 
+                           onchange="updateTask(${task.id}, 'start', this.value)" title="Start date">
+                    <input type="date" class="inline-date" value="${task.end}" 
+                           onchange="updateTask(${task.id}, 'end', this.value)" title="End date">
+                    <select class="inline-select risk-select" 
+                            onchange="updateTask(${task.id}, 'risk', this.value)">
+                        <option value="none" ${!task.risk || task.risk === 'none' ? 'selected' : ''}>-</option>
+                        <option value="low" ${task.risk === 'low' ? 'selected' : ''}>⚠️</option>
+                        <option value="medium" ${task.risk === 'medium' ? 'selected' : ''}>🔶</option>
+                        <option value="high" ${task.risk === 'high' ? 'selected' : ''}>🔺</option>
+                    </select>
+                    <button class="btn-delete-task" onclick="deleteTask(${task.id})" title="Delete task">🗑️</button>
                 </div>
             </div>
             <div class="task-timeline">
@@ -251,7 +208,7 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
                 ${pos ? `
                     <div class="gantt-bar ${task.priority.toLowerCase()}" 
                          style="left: ${pos.left}px; width: ${pos.width}px;"
-                         title="${task.name} (${task.start} to ${task.end})">
+                         title="${task.name}\n${task.start} to ${task.end}\n${task.priority}, Size: ${task.size}${task.owner ? '\nOwner: ' + task.owner : ''}">
                         ${task.risk && task.risk !== 'none' ? `<span class="risk-indicator">${getRiskIndicator(task.risk)}</span>` : ''}
                         <div class="bar-pattern">
                             ${Array(Math.floor(pos.width / 10)).fill('<div class="bar-segment"></div>').join('')}
@@ -263,7 +220,16 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
     `;
 }
 
-// Render workstream
+// Update workstream owner
+function updateWorkstreamOwner(wsId, owner) {
+    const ws = projectData.workstreams.find(w => w.id === wsId);
+    if (ws) {
+        ws.owner = owner;
+        saveData();
+    }
+}
+
+// Render workstream with editable header
 function renderWorkstream(workstream, index) {
     const months = getMonths();
     
@@ -294,9 +260,14 @@ function renderWorkstream(workstream, index) {
             <div class="workstream-header">
                 <div class="workstream-label">
                     <span class="workstream-number">${index + 1}</span>
-                    <span>${escapeHtml(workstream.name)}</span>
+                    <input type="text" class="inline-edit workstream-name-edit" value="${escapeHtml(workstream.name)}"
+                           onchange="updateWorkstreamName(${workstream.id}, this.value)" title="Click to edit workstream name">
+                    <input type="text" class="owner-input" value="${escapeHtml(workstream.owner || '')}" 
+                           placeholder="Owner" onchange="updateWorkstreamOwner(${workstream.id}, this.value)" 
+                           title="Workstream Owner" style="margin-left: 8px;">
                     <div class="workstream-actions">
                         <button onclick="addTaskToWorkstream(${workstream.id})" title="Add Task">➕</button>
+                        <button onclick="deleteWorkstream(${workstream.id})" title="Delete Workstream">🗑️</button>
                     </div>
                 </div>
                 <div class="workstream-timeline">
@@ -355,7 +326,8 @@ document.getElementById('taskForm').addEventListener('submit', function(e) {
         size: document.getElementById('taskSize').value,
         start: document.getElementById('taskStart').value,
         end: document.getElementById('taskEnd').value,
-        risk: document.getElementById('taskRisk').value
+        risk: document.getElementById('taskRisk').value,
+        owner: document.getElementById('taskOwner').value
     };
     
     if (currentWorkstreamId) {
@@ -379,6 +351,7 @@ document.getElementById('workstreamForm').addEventListener('submit', function(e)
     const workstream = {
         id: Date.now(),
         name: document.getElementById('workstreamName').value,
+        owner: document.getElementById('workstreamOwner').value,
         tasks: []
     };
     
@@ -390,10 +363,74 @@ document.getElementById('workstreamForm').addEventListener('submit', function(e)
     showToast('✅ Workstream added!');
 });
 
-// Event listeners
-document.getElementById('addWorkstreamBtn').addEventListener('click', openWorkstreamModal);
+// Calendar range change handlers
+function updateCalendarRange() {
+    const startInput = document.getElementById('startMonth');
+    const endInput = document.getElementById('endMonth');
+    
+    if (startInput.value && endInput.value) {
+        const [startYear, startMonth] = startInput.value.split('-').map(Number);
+        const [endYear, endMonth] = endInput.value.split('-').map(Number);
+        
+        projectData.startMonth = new Date(startYear, startMonth - 1, 1);
+        projectData.endMonth = new Date(endYear, endMonth - 1, 1);
+        
+        saveData();
+        renderTimeline();
+        showToast('📅 Calendar range updated!');
+    }
+}
 
-document.getElementById('exportBtn').addEventListener('click', function() {
+function initCalendarInputs() {
+    const startInput = document.getElementById('startMonth');
+    const endInput = document.getElementById('endMonth');
+    
+    // Set initial values
+    const startDate = new Date(projectData.startMonth);
+    const endDate = new Date(projectData.endMonth);
+    
+    startInput.value = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+    endInput.value = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    // Add event listeners
+    startInput.addEventListener('change', updateCalendarRange);
+    endInput.addEventListener('change', updateCalendarRange);
+}
+
+// ==================== EXPORT FUNCTIONS ====================
+
+// Export to CSV for Google Sheets
+function exportToCSV() {
+    let csvContent = "Workstream,Workstream Owner,Task,Task Owner,Priority,Size,Start Date,End Date,Risk\n";
+    
+    projectData.workstreams.forEach(ws => {
+        if (ws.tasks) {
+            ws.tasks.forEach(task => {
+                csvContent += `"${ws.name}","${ws.owner || ''}","${task.name}","${task.owner || ''}","${task.priority}","${task.size}","${task.start}","${task.end}","${task.risk || 'none'}"\n`;
+            });
+        }
+        if (ws.subgroups) {
+            ws.subgroups.forEach(sg => {
+                sg.tasks.forEach(task => {
+                    csvContent += `"${ws.name} > ${sg.name}","${ws.owner || ''}","${task.name}","${task.owner || ''}","${task.priority}","${task.size}","${task.start}","${task.end}","${task.risk || 'none'}"\n`;
+                });
+            });
+        }
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'project-timeline.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('📊 Exported to CSV! Open in Google Sheets');
+}
+
+// Export to JSON
+function exportToJSON() {
     const dataStr = JSON.stringify(projectData, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -401,8 +438,106 @@ document.getElementById('exportBtn').addEventListener('click', function() {
     a.href = url;
     a.download = 'project-timeline.json';
     a.click();
-    showToast('📥 Data exported!');
+    URL.revokeObjectURL(url);
+    showToast('📥 Data exported as JSON!');
+}
+
+// Import data
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    
+    if (file.name.endsWith('.json')) {
+        reader.onload = function(e) {
+            try {
+                projectData = JSON.parse(e.target.result);
+                saveData();
+                renderTimeline();
+                showToast('✅ Data imported successfully!');
+            } catch (error) {
+                showToast('❌ Error importing JSON file');
+                console.error(error);
+            }
+        };
+        reader.readAsText(file);
+    } else if (file.name.endsWith('.csv')) {
+        reader.onload = function(e) {
+            try {
+                importCSV(e.target.result);
+                showToast('✅ CSV imported successfully!');
+            } catch (error) {
+                showToast('❌ Error importing CSV file');
+                console.error(error);
+            }
+        };
+        reader.readAsText(file);
+    }
+}
+
+// Import CSV
+function importCSV(csvContent) {
+    const lines = csvContent.split('\n');
+    const headers = lines[0].split(',');
+    
+    // Clear existing data
+    projectData.workstreams = [];
+    const workstreamMap = new Map();
+    
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // Parse CSV line (handling quoted values)
+        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        if (!values || values.length < 6) continue;
+        
+        const wsName = values[0].replace(/"/g, '');
+        const taskName = values[1].replace(/"/g, '');
+        const priority = values[2].replace(/"/g, '');
+        const size = values[3].replace(/"/g, '');
+        const start = values[4].replace(/"/g, '');
+        const end = values[5].replace(/"/g, '');
+        const risk = values[6] ? values[6].replace(/"/g, '') : 'none';
+        
+        // Find or create workstream
+        if (!workstreamMap.has(wsName)) {
+            const ws = {
+                id: Date.now() + i,
+                name: wsName,
+                tasks: []
+            };
+            workstreamMap.set(wsName, ws);
+            projectData.workstreams.push(ws);
+        }
+        
+        const workstream = workstreamMap.get(wsName);
+        workstream.tasks.push({
+            id: Date.now() + i * 1000 + Math.random() * 1000,
+            name: taskName,
+            priority: priority,
+            size: size,
+            start: start,
+            end: end,
+            risk: risk
+        });
+    }
+    
+    saveData();
+    renderTimeline();
+}
+
+// Event listeners
+document.getElementById('addWorkstreamBtn').addEventListener('click', openWorkstreamModal);
+
+document.getElementById('exportCSVBtn').addEventListener('click', exportToCSV);
+
+document.getElementById('importBtn').addEventListener('click', function() {
+    document.getElementById('importFile').click();
 });
+
+document.getElementById('importFile').addEventListener('change', importData);
 
 // Save to localStorage
 function saveData() {
@@ -416,11 +551,11 @@ function loadData() {
         try {
             projectData = JSON.parse(saved);
         } catch (e) {
-            console.log('Using sample data');
-            projectData = sampleData;
+            console.log('Starting fresh');
+            projectData = { ...emptyData };
         }
     } else {
-        projectData = sampleData;
+        projectData = { ...emptyData };
     }
 }
 
@@ -442,6 +577,6 @@ function escapeHtml(text) {
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
+    initCalendarInputs();
     renderTimeline();
 });
-

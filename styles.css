@@ -90,6 +90,81 @@ body {
     transform: translateY(-2px);
 }
 
+/* Calendar Range */
+.calendar-range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-right: 12px;
+}
+
+.calendar-range label {
+    font-size: 16px;
+}
+
+.calendar-range span {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.calendar-range input[type="month"] {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.calendar-range input[type="month"]:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+/* Owner Badge */
+.owner-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(163, 113, 247, 0.2);
+    color: var(--accent-purple);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.owner-badge::before {
+    content: '👤';
+    font-size: 10px;
+}
+
+.owner-input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--accent-purple);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    width: 80px;
+    font-family: inherit;
+}
+
+.owner-input:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+}
+
+.owner-input::placeholder {
+    color: var(--text-muted);
+}
+
 /* Legend */
 .legend {
     background: var(--bg-secondary);
@@ -353,6 +428,116 @@ body {
     background: var(--bg-tertiary);
     color: var(--text-secondary);
     font-family: 'JetBrains Mono', monospace;
+}
+
+/* Inline Editing Styles */
+.inline-edit {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-primary);
+    font-size: inherit;
+    font-family: inherit;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    width: 100%;
+    min-width: 150px;
+}
+
+.inline-edit:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+.inline-edit:focus {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-blue);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.workstream-name-edit {
+    font-weight: 600;
+    flex: 1;
+    min-width: 200px;
+}
+
+.task-name-edit {
+    flex: 1;
+    min-width: 180px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+}
+
+.inline-select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.inline-select:focus {
+    border-color: var(--accent-blue);
+    outline: none;
+}
+
+.inline-select.priority-select.p0 { color: var(--p0-color); }
+.inline-select.priority-select.p1 { color: var(--p1-color); }
+.inline-select.priority-select.p2 { color: var(--p2-color); }
+
+.inline-date {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    width: 95px;
+}
+
+.inline-date:focus {
+    border-color: var(--accent-blue);
+    outline: none;
+}
+
+.btn-delete-task {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.task-row:hover .btn-delete-task {
+    opacity: 1;
+}
+
+.btn-delete-task:hover {
+    color: var(--p0-color);
+}
+
+.task-meta {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.task-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Task Timeline */

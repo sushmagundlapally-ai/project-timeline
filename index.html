@@ -18,9 +18,16 @@
                 <p class="subtitle">Workstream & Task Tracker</p>
             </div>
             <div class="header-actions">
+                <div class="calendar-range">
+                    <label>📅</label>
+                    <input type="month" id="startMonth" title="Start Month">
+                    <span>to</span>
+                    <input type="month" id="endMonth" title="End Month">
+                </div>
                 <button class="btn-icon" id="addWorkstreamBtn" title="Add Workstream">➕</button>
-                <button class="btn-icon" id="exportBtn" title="Export Data">📥</button>
-                <button class="btn-icon" id="toggleEditBtn" title="Toggle Edit Mode">✏️</button>
+                <button class="btn-icon" id="exportCSVBtn" title="Export to Google Sheets (CSV)">📊</button>
+                <button class="btn-icon" id="importBtn" title="Import Data">📤</button>
+                <input type="file" id="importFile" accept=".json,.csv" style="display: none;">
             </div>
         </header>
 
@@ -110,14 +117,20 @@
                             <input type="date" id="taskEnd" required>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="taskRisk">Risk Level</label>
-                        <select id="taskRisk">
-                            <option value="none">None</option>
-                            <option value="low">Low ⚠️</option>
-                            <option value="medium">Medium 🔶</option>
-                            <option value="high">High 🔺</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskRisk">Risk Level</label>
+                            <select id="taskRisk">
+                                <option value="none">None</option>
+                                <option value="low">Low ⚠️</option>
+                                <option value="medium">Medium 🔶</option>
+                                <option value="high">High 🔺</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskOwner">Owner</label>
+                            <input type="text" id="taskOwner" placeholder="Enter owner name">
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
@@ -138,6 +151,10 @@
                     <div class="form-group">
                         <label for="workstreamName">Workstream Name</label>
                         <input type="text" id="workstreamName" required placeholder="Enter workstream name">
+                    </div>
+                    <div class="form-group">
+                        <label for="workstreamOwner">Owner</label>
+                        <input type="text" id="workstreamOwner" placeholder="Enter owner name">
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" onclick="closeWorkstreamModal()">Cancel</button>
