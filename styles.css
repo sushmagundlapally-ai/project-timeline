@@ -90,6 +90,58 @@ body {
     transform: translateY(-2px);
 }
 
+/* Program Selector */
+.program-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 16px;
+    padding-right: 16px;
+    border-right: 1px solid var(--border-color);
+}
+
+.program-selector select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 180px;
+    cursor: pointer;
+}
+
+.program-selector select:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.btn-icon-small {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon-small:hover {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+
+#deleteProgramBtn:hover {
+    background: var(--p0-color);
+    border-color: var(--p0-color);
+}
+
 /* Calendar Range */
 .calendar-range {
     display: flex;

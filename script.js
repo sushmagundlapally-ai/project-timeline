@@ -15,8 +15,147 @@ const emptyData = {
     workstreams: []
 };
 
+// Current program
+let currentProgram = null;
+
 // Initialize with empty data
 projectData = emptyData;
+
+// ==================== PROGRAM MANAGEMENT ====================
+
+function getProgramList() {
+    const saved = localStorage.getItem('programList');
+    return saved ? JSON.parse(saved) : [];
+}
+
+function saveProgramList(programs) {
+    localStorage.setItem('programList', JSON.stringify(programs));
+}
+
+function getProgramData(programId) {
+    const saved = localStorage.getItem('program_' + programId);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            return { ...emptyData };
+        }
+    }
+    return { ...emptyData };
+}
+
+function saveProgramData(programId, data) {
+    localStorage.setItem('program_' + programId, JSON.stringify(data));
+}
+
+function createProgram(name) {
+    const programs = getProgramList();
+    const id = 'prog_' + Date.now();
+    
+    programs.push({
+        id: id,
+        name: name,
+        createdAt: new Date().toISOString()
+    });
+    
+    saveProgramList(programs);
+    saveProgramData(id, { ...emptyData });
+    
+    return id;
+}
+
+function deleteProgram(programId) {
+    let programs = getProgramList();
+    programs = programs.filter(p => p.id !== programId);
+    saveProgramList(programs);
+    localStorage.removeItem('program_' + programId);
+}
+
+function loadProgram(programId) {
+    currentProgram = programId;
+    projectData = getProgramData(programId);
+    
+    // Update URL
+    const url = new URL(window.location);
+    url.searchParams.set('program', programId);
+    window.history.replaceState({}, '', url);
+    
+    initCalendarInputs();
+    renderTimeline();
+}
+
+function renderProgramSelector() {
+    const select = document.getElementById('programSelect');
+    const programs = getProgramList();
+    
+    select.innerHTML = '<option value="">-- Select Program --</option>';
+    
+    programs.forEach(prog => {
+        const option = document.createElement('option');
+        option.value = prog.id;
+        option.textContent = prog.name;
+        if (prog.id === currentProgram) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+}
+
+function initProgramFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const programId = params.get('program');
+    
+    if (programId) {
+        const programs = getProgramList();
+        if (programs.find(p => p.id === programId)) {
+            currentProgram = programId;
+            projectData = getProgramData(programId);
+        }
+    }
+}
+
+// Program event listeners
+document.getElementById('programSelect').addEventListener('change', function() {
+    if (this.value) {
+        loadProgram(this.value);
+        showToast('📂 Loaded: ' + this.options[this.selectedIndex].text);
+    } else {
+        currentProgram = null;
+        projectData = { ...emptyData };
+        window.history.replaceState({}, '', window.location.pathname);
+        renderTimeline();
+    }
+});
+
+document.getElementById('newProgramBtn').addEventListener('click', function() {
+    const name = prompt('Enter program name:');
+    if (name && name.trim()) {
+        const id = createProgram(name.trim());
+        renderProgramSelector();
+        loadProgram(id);
+        showToast('✅ Created: ' + name.trim());
+    }
+});
+
+document.getElementById('deleteProgramBtn').addEventListener('click', function() {
+    if (!currentProgram) {
+        showToast('❌ No program selected');
+        return;
+    }
+    
+    const programs = getProgramList();
+    const prog = programs.find(p => p.id === currentProgram);
+    
+    if (confirm(`Delete program "${prog.name}"? This cannot be undone.`)) {
+        deleteProgram(currentProgram);
+        currentProgram = null;
+        projectData = { ...emptyData };
+        window.history.replaceState({}, '', window.location.pathname);
+        renderProgramSelector();
+        renderTimeline();
+        showToast('🗑️ Program deleted');
+    }
+});
 
 // Generate months array
 function getMonths() {
@@ -1117,24 +1256,37 @@ Project Beta,Implementation,Team,P1,L,2025-02-01,2025-05-01,medium`;
     showToast('📥 Template downloaded!');
 }
 
-// Save to localStorage
+// Save to localStorage (program-aware)
 function saveData() {
-    localStorage.setItem('projectTimeline', JSON.stringify(projectData));
+    if (currentProgram) {
+        saveProgramData(currentProgram, projectData);
+    } else {
+        localStorage.setItem('projectTimeline', JSON.stringify(projectData));
+    }
 }
 
 // Load from localStorage
 function loadData() {
-    const saved = localStorage.getItem('projectTimeline');
-    if (saved) {
-        try {
-            projectData = JSON.parse(saved);
-        } catch (e) {
-            console.log('Starting fresh');
+    // First check URL for program
+    initProgramFromURL();
+    
+    if (!currentProgram) {
+        // Load default/legacy data
+        const saved = localStorage.getItem('projectTimeline');
+        if (saved) {
+            try {
+                projectData = JSON.parse(saved);
+            } catch (e) {
+                console.log('Starting fresh');
+                projectData = { ...emptyData };
+            }
+        } else {
             projectData = { ...emptyData };
         }
-    } else {
-        projectData = { ...emptyData };
     }
+    
+    // Render program selector
+    renderProgramSelector();
 }
 
 // Toast notification
