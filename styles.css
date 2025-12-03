@@ -20,8 +20,8 @@
     --accent-blue: #58a6ff;
     --accent-purple: #a371f7;
     
-    --bar-height: 20px;
-    --row-height: 40px;
+    --bar-height: 22px;
+    --row-height: 48px;
     --month-width: 120px;
 }
 
@@ -216,23 +216,26 @@ body {
 }
 
 .owner-input {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
+    background: rgba(163, 113, 247, 0.15);
+    border: 1px solid rgba(163, 113, 247, 0.3);
     color: var(--accent-purple);
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    width: 80px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 12px;
+    width: 90px;
     font-family: inherit;
 }
 
 .owner-input:focus {
     outline: none;
     border-color: var(--accent-purple);
+    background: rgba(163, 113, 247, 0.25);
 }
 
 .owner-input::placeholder {
     color: var(--text-muted);
+    font-weight: 400;
 }
 
 /* Legend */
@@ -303,8 +306,8 @@ body {
 }
 
 .workstream-label-header {
-    width: 400px;
-    min-width: 400px;
+    width: 480px;
+    min-width: 480px;
     padding: 16px 20px;
     font-weight: 600;
     font-size: 12px;
@@ -365,8 +368,8 @@ body {
 }
 
 .workstream-label {
-    width: 400px;
-    min-width: 400px;
+    width: 480px;
+    min-width: 480px;
     padding: 14px 20px;
     font-weight: 600;
     font-size: 14px;
@@ -374,7 +377,7 @@ body {
     border-right: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .workstream-number {
@@ -437,15 +440,15 @@ body {
 }
 
 .task-label {
-    width: 400px;
-    min-width: 400px;
-    padding: 0 20px 0 44px;
+    width: 480px;
+    min-width: 480px;
+    padding: 10px 16px 10px 44px;
     font-size: 13px;
     color: var(--text-primary);
     border-right: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     font-family: 'JetBrains Mono', monospace;
 }
 
@@ -463,8 +466,10 @@ body {
 
 .task-meta {
     display: flex;
-    gap: 6px;
+    gap: 8px;
+    align-items: center;
     margin-left: auto;
+    flex-shrink: 0;
 }
 
 .priority-badge {
@@ -527,14 +532,33 @@ body {
 }
 
 .workstream-name-edit {
-    font-weight: 600;
+    font-weight: 700;
     flex: 1;
-    min-width: 200px;
+    min-width: 150px;
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.workstream-name-edit:focus,
+.task-name-edit:focus {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
 }
 
 .task-name-edit {
-    flex: 1;
-    min-width: 180px;
+    flex: 0 0 auto;
+    width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+    color: var(--text-primary);
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
 }
@@ -543,9 +567,9 @@ body {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 2px 4px;
+    padding: 4px 6px;
     border-radius: 4px;
     cursor: pointer;
     font-family: 'JetBrains Mono', monospace;
@@ -559,6 +583,134 @@ body {
 .inline-select.priority-select.p0 { color: var(--p0-color); }
 .inline-select.priority-select.p1 { color: var(--p1-color); }
 .inline-select.priority-select.p2 { color: var(--p2-color); }
+
+/* Status Dropdown */
+.status-dropdown {
+    min-width: 110px;
+    font-size: 11px;
+}
+
+.status-dropdown.not-started { 
+    background: rgba(110, 118, 129, 0.2); 
+    border-color: #6e7681;
+    color: #8b949e;
+}
+.status-dropdown.in-progress { 
+    background: rgba(88, 166, 255, 0.2); 
+    border-color: #58a6ff;
+    color: #58a6ff;
+}
+.status-dropdown.blocked { 
+    background: rgba(218, 54, 51, 0.2); 
+    border-color: #da3633;
+    color: #da3633;
+}
+.status-dropdown.at-risk { 
+    background: rgba(210, 153, 34, 0.2); 
+    border-color: #d29922;
+    color: #d29922;
+}
+.status-dropdown.completed { 
+    background: rgba(63, 185, 80, 0.2); 
+    border-color: #3fb950;
+    color: #3fb950;
+}
+.status-dropdown.canceled { 
+    background: rgba(72, 79, 88, 0.2); 
+    border-color: #484f58;
+    color: #6e7681;
+}
+
+/* Status Badge Wrapper */
+.status-badge-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* Status Badge (compact) */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.status-badge-wrapper:hover .status-badge {
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+}
+
+/* Status Click Dropdown */
+.status-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-blue);
+    border-radius: 8px;
+    padding: 6px 0;
+    min-width: 150px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(88, 166, 255, 0.3);
+    z-index: 1000;
+}
+
+.status-dropdown-menu.open {
+    display: block;
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.status-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.status-dropdown-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot.not-started { background: #6e7681; }
+.status-dot.in-progress { background: #58a6ff; }
+.status-dot.blocked { background: #da3633; }
+.status-dot.at-risk { background: #d29922; }
+.status-dot.completed { background: #3fb950; }
+.status-dot.canceled { background: #484f58; }
+
+
+/* Status-specific colors for badge */
+.status-badge.not-started { background: rgba(110, 118, 129, 0.3); }
+.status-badge.in-progress { background: rgba(88, 166, 255, 0.3); }
+.status-badge.blocked { background: rgba(218, 54, 51, 0.3); }
+.status-badge.at-risk { background: rgba(210, 153, 34, 0.3); }
+.status-badge.completed { background: rgba(63, 185, 80, 0.3); }
+.status-badge.canceled { background: rgba(72, 79, 88, 0.3); }
 
 .inline-date {
     background: var(--bg-tertiary);
@@ -622,6 +774,138 @@ body {
 
 .btn-delete-task:active {
     transform: scale(0.95);
+}
+
+/* Status Circle */
+.status-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.status-circle:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 8px currentColor;
+}
+
+/* Status Colors */
+.status-circle.not-started {
+    background: #6e7681;
+    border-color: #6e7681;
+}
+
+.status-circle.in-progress {
+    background: #58a6ff;
+    border-color: #58a6ff;
+    animation: pulse 2s infinite;
+}
+
+.status-circle.blocked {
+    background: #da3633;
+    border-color: #da3633;
+}
+
+.status-circle.at-risk {
+    background: #d29922;
+    border-color: #d29922;
+}
+
+.status-circle.completed {
+    background: #3fb950;
+    border-color: #3fb950;
+}
+
+.status-circle.canceled {
+    background: #484f58;
+    border-color: #484f58;
+    text-decoration: line-through;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Status Tooltip */
+.status-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(13, 17, 23, 0.95);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.status-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--border-color);
+}
+
+.status-wrapper:hover .status-tooltip {
+    display: block;
+}
+
+/* Status Select Dropdown */
+.status-select {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px 0;
+    min-width: 160px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 2000;
+    display: none;
+}
+
+.status-select.active {
+    display: block;
+}
+
+.status-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-primary);
+    transition: background 0.15s ease;
+}
+
+.status-option:hover {
+    background: var(--bg-tertiary);
+}
+
+.status-option .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
 }
 
 .task-meta {
@@ -1012,21 +1296,22 @@ body {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 14px;
+    font-size: 24px;
     z-index: 10;
     cursor: grab;
     padding: 4px;
     user-select: none;
     transition: transform 0.1s ease;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
 .risk-indicator:active {
     cursor: grabbing;
-    transform: translateY(-50%) scale(1.2);
+    transform: translateY(-50%) scale(1.3);
 }
 
 .risk-indicator:hover {
-    transform: translateY(-50%) scale(1.15);
+    transform: translateY(-50%) scale(1.2);
 }
 
 .risk-tooltip {

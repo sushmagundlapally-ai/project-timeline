@@ -129,17 +129,30 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="taskRisk">Risk Level</label>
-                            <select id="taskRisk">
-                                <option value="none">None</option>
-                                <option value="low">Low ⚠️</option>
-                                <option value="medium">Medium 🔶</option>
-                                <option value="high">High 🔺</option>
+                            <label for="taskStatus">Status</label>
+                            <select id="taskStatus">
+                                <option value="not-started">Not Started</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="blocked">Blocked</option>
+                                <option value="at-risk">At Risk</option>
+                                <option value="completed">Completed</option>
+                                <option value="canceled">Canceled</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="taskOwner">Owner</label>
                             <input type="text" id="taskOwner" placeholder="Enter owner name">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskRisk">Risk Level</label>
+                            <select id="taskRisk">
+                                <option value="none">None</option>
+                                <option value="low">● Low</option>
+                                <option value="medium">◆ Medium</option>
+                                <option value="high">⚠️ High</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-group" id="riskTextGroup" style="display: none;">

@@ -72,13 +72,24 @@ function deleteProgram(programId) {
 }
 
 function loadProgram(programId) {
+    console.log('Loading program:', programId);
     currentProgram = programId;
-    projectData = getProgramData(programId);
+    
+    const data = getProgramData(programId);
+    projectData = data;
+    
+    console.log('Program data loaded:', projectData.workstreams?.length || 0, 'workstreams');
     
     // Update URL
     const url = new URL(window.location);
     url.searchParams.set('program', programId);
     window.history.replaceState({}, '', url);
+    
+    // Update selector
+    const select = document.getElementById('programSelect');
+    if (select) {
+        select.value = programId;
+    }
     
     initCalendarInputs();
     renderTimeline();
@@ -86,6 +97,8 @@ function loadProgram(programId) {
 
 function renderProgramSelector() {
     const select = document.getElementById('programSelect');
+    if (!select) return;
+    
     const programs = getProgramList();
     
     select.innerHTML = '<option value="">-- Select Program --</option>';
@@ -94,11 +107,15 @@ function renderProgramSelector() {
         const option = document.createElement('option');
         option.value = prog.id;
         option.textContent = prog.name;
-        if (prog.id === currentProgram) {
-            option.selected = true;
-        }
         select.appendChild(option);
     });
+    
+    // Set selected value after all options are added
+    if (currentProgram) {
+        select.value = currentProgram;
+    }
+    
+    console.log('Program selector rendered, current:', currentProgram, 'selected:', select.value);
 }
 
 function initProgramFromURL() {
@@ -116,14 +133,17 @@ function initProgramFromURL() {
 
 // Program event listeners
 document.getElementById('programSelect').addEventListener('change', function() {
+    console.log('Program selected:', this.value);
     if (this.value) {
         loadProgram(this.value);
         showToast('📂 Loaded: ' + this.options[this.selectedIndex].text);
     } else {
         currentProgram = null;
-        projectData = { ...emptyData };
+        projectData = { ...emptyData, workstreams: [] };
         window.history.replaceState({}, '', window.location.pathname);
+        initCalendarInputs();
         renderTimeline();
+        showToast('📂 Switched to default view');
     }
 });
 
@@ -214,22 +234,168 @@ function calculateBarPosition(startDate, endDate) {
 
 // Get risk indicator
 function getRiskIndicator(risk) {
+    // Using different symbols/colors that don't clash with priorities
     switch(risk) {
-        case 'high': return '🔺';
-        case 'medium': return '🔶';
-        case 'low': return '⚠️';
+        case 'high': return '⚠️';      // Warning triangle
+        case 'medium': return '◆';     // Diamond
+        case 'low': return '●';        // Circle
+        default: return '';
+    }
+}
+
+function getRiskStyle(risk) {
+    switch(risk) {
+        case 'high': return 'color: #ff6b6b; text-shadow: 0 0 8px #ff6b6b;';      // Bright red
+        case 'medium': return 'color: #ffd93d; text-shadow: 0 0 8px #ffd93d;';   // Bright yellow
+        case 'low': return 'color: #6bcb77; text-shadow: 0 0 8px #6bcb77;';      // Bright green
         default: return '';
     }
 }
 
 function getRiskLabel(risk) {
     switch(risk) {
-        case 'high': return '🔺 High Risk';
-        case 'medium': return '🔶 Medium Risk';
-        case 'low': return '⚠️ Low Risk';
+        case 'high': return '⚠️ High Risk';
+        case 'medium': return '◆ Medium Risk';
+        case 'low': return '● Low Risk';
         default: return 'Risk';
     }
 }
+
+// ==================== STATUS ====================
+
+const STATUS_OPTIONS = [
+    { value: 'not-started', label: 'Not Started', color: '#6e7681' },
+    { value: 'in-progress', label: 'In Progress', color: '#58a6ff' },
+    { value: 'blocked', label: 'Blocked', color: '#da3633' },
+    { value: 'at-risk', label: 'At Risk', color: '#d29922' },
+    { value: 'completed', label: 'Completed', color: '#3fb950' },
+    { value: 'canceled', label: 'Canceled', color: '#484f58' }
+];
+
+function getStatusLabel(status) {
+    const opt = STATUS_OPTIONS.find(o => o.value === status);
+    return opt ? opt.label : 'Not Started';
+}
+
+function getStatusColor(status) {
+    const opt = STATUS_OPTIONS.find(o => o.value === status);
+    return opt ? opt.color : '#6e7681';
+}
+
+function getStatusEmoji(status) {
+    switch(status) {
+        case 'in-progress': return '🔵';
+        case 'blocked': return '🔴';
+        case 'at-risk': return '🟠';
+        case 'completed': return '🟢';
+        case 'canceled': return '⚫';
+        default: return '⚪';
+    }
+}
+
+function toggleTaskDetails(taskId) {
+    const detailsRow = document.getElementById('taskDetails-' + taskId);
+    if (detailsRow) {
+        detailsRow.classList.toggle('expanded');
+    }
+}
+
+// Toggle status dropdown menu
+function toggleStatusMenu(event, taskId) {
+    event.stopPropagation();
+    
+    // Close all other open menus
+    document.querySelectorAll('.status-dropdown-menu.open').forEach(menu => {
+        menu.classList.remove('open');
+    });
+    
+    const menu = document.getElementById('statusMenu-' + taskId);
+    if (menu) {
+        menu.classList.toggle('open');
+    }
+}
+
+// Select status and close menu
+function selectStatus(taskId, status) {
+    updateTask(taskId, 'status', status);
+    
+    // Close the menu
+    document.querySelectorAll('.status-dropdown-menu.open').forEach(menu => {
+        menu.classList.remove('open');
+    });
+}
+
+// Close status menu when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.status-badge-wrapper')) {
+        document.querySelectorAll('.status-dropdown-menu.open').forEach(menu => {
+            menu.classList.remove('open');
+        });
+    }
+});
+
+function renderStatusCircle(taskId, status) {
+    const currentStatus = status || 'not-started';
+    const label = getStatusLabel(currentStatus);
+    const color = getStatusColor(currentStatus);
+    
+    return `
+        <div class="status-wrapper">
+            <div class="status-circle ${currentStatus}" 
+                 style="background: ${color}; border-color: ${color};"
+                 onclick="toggleStatusDropdown(event, ${taskId})"
+                 title="${label}">
+            </div>
+            <div class="status-tooltip" style="border-color: ${color}; color: ${color};">
+                ${label}
+            </div>
+            <div class="status-select" id="statusSelect-${taskId}">
+                ${STATUS_OPTIONS.map(opt => `
+                    <div class="status-option" onclick="setTaskStatus(${taskId}, '${opt.value}')">
+                        <span class="status-dot" style="background: ${opt.color};"></span>
+                        ${opt.label}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function toggleStatusDropdown(event, taskId) {
+    event.stopPropagation();
+    
+    // Close all other dropdowns
+    document.querySelectorAll('.status-select.active').forEach(el => {
+        el.classList.remove('active');
+    });
+    
+    const dropdown = document.getElementById('statusSelect-' + taskId);
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
+}
+
+function setTaskStatus(taskId, status) {
+    updateTaskNoRender(taskId, 'status', status);
+    
+    // Close dropdown and update circle
+    document.querySelectorAll('.status-select.active').forEach(el => {
+        el.classList.remove('active');
+    });
+    
+    // Re-render to show updated status
+    renderTimeline();
+    showToast('✅ Status updated: ' + getStatusLabel(status));
+}
+
+// Close status dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.status-wrapper')) {
+        document.querySelectorAll('.status-select.active').forEach(el => {
+            el.classList.remove('active');
+        });
+    }
+});
 
 // ==================== DRAGGABLE RISK INDICATOR ====================
 
@@ -558,8 +724,34 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
     return `
         <div class="task-row" data-task-id="${task.id}">
             <div class="task-label ${labelClass}">
+                <div class="status-badge-wrapper" id="statusWrapper-${task.id}">
+                    <span class="status-badge ${task.status || 'not-started'}" 
+                          onclick="toggleStatusMenu(event, ${task.id})">
+                        ${getStatusEmoji(task.status)}
+                    </span>
+                    <div class="status-dropdown-menu" id="statusMenu-${task.id}">
+                        <div class="status-dropdown-item" onclick="selectStatus(${task.id}, 'not-started')">
+                            <span class="status-dot not-started"></span> Not Started
+                        </div>
+                        <div class="status-dropdown-item" onclick="selectStatus(${task.id}, 'in-progress')">
+                            <span class="status-dot in-progress"></span> In Progress
+                        </div>
+                        <div class="status-dropdown-item" onclick="selectStatus(${task.id}, 'blocked')">
+                            <span class="status-dot blocked"></span> Blocked
+                        </div>
+                        <div class="status-dropdown-item" onclick="selectStatus(${task.id}, 'at-risk')">
+                            <span class="status-dot at-risk"></span> At Risk
+                        </div>
+                        <div class="status-dropdown-item" onclick="selectStatus(${task.id}, 'completed')">
+                            <span class="status-dot completed"></span> Completed
+                        </div>
+                        <div class="status-dropdown-item" onclick="selectStatus(${task.id}, 'canceled')">
+                            <span class="status-dot canceled"></span> Canceled
+                        </div>
+                    </div>
+                </div>
                 <input type="text" class="inline-edit task-name-edit" value="${escapeHtml(task.name)}" 
-                       onchange="updateTask(${task.id}, 'name', this.value)" title="Click to edit name">
+                       onchange="updateTask(${task.id}, 'name', this.value)" title="${escapeHtml(task.name)}">
                 <div class="task-meta">
                     <input type="text" class="owner-input" value="${escapeHtml(task.owner || '')}" 
                            placeholder="Owner" onchange="updateTask(${task.id}, 'owner', this.value)" title="Owner">
@@ -579,13 +771,6 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
                            onchange="updateTask(${task.id}, 'start', this.value)" title="Start date">
                     <input type="date" class="inline-date" value="${task.end}" 
                            onchange="updateTask(${task.id}, 'end', this.value)" title="End date">
-                    <select class="inline-select risk-select" 
-                            onchange="updateTask(${task.id}, 'risk', this.value)">
-                        <option value="none" ${!task.risk || task.risk === 'none' ? 'selected' : ''}>-</option>
-                        <option value="low" ${task.risk === 'low' ? 'selected' : ''}>⚠️</option>
-                        <option value="medium" ${task.risk === 'medium' ? 'selected' : ''}>🔶</option>
-                        <option value="high" ${task.risk === 'high' ? 'selected' : ''}>🔺</option>
-                    </select>
                     <button class="btn-delete-task" onclick="deleteTask(${task.id})" title="Delete task">🗑️</button>
                 </div>
             </div>
@@ -598,7 +783,7 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
                         ${task.risk && task.risk !== 'none' ? `
                             <span class="risk-indicator" 
                                   data-task-id="${task.id}"
-                                  style="left: ${task.riskPosition || 50}%;"
+                                  style="left: ${task.riskPosition || 50}%; ${getRiskStyle(task.risk)}"
                                   draggable="false"
                                   onmousedown="startDragRisk(event, ${task.id})"
                                   title="${task.riskText ? '' : getRiskLabel(task.risk)}">
@@ -659,12 +844,24 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
                                            onchange="updateTaskNoRender(${task.id}, 'owner', this.value)">
                                 </div>
                                 <div class="bar-edit-group">
+                                    <label>Status</label>
+                                    <select onchange="updateTaskNoRender(${task.id}, 'status', this.value)">
+                                        ${STATUS_OPTIONS.map(opt => `
+                                            <option value="${opt.value}" ${task.status === opt.value ? 'selected' : ''}>
+                                                ${opt.label}
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="bar-edit-row">
+                                <div class="bar-edit-group">
                                     <label>Risk Level</label>
                                     <select onchange="updateTaskNoRender(${task.id}, 'risk', this.value)">
                                         <option value="none" ${!task.risk || task.risk === 'none' ? 'selected' : ''}>None</option>
-                                        <option value="low" ${task.risk === 'low' ? 'selected' : ''}>⚠️ Low</option>
-                                        <option value="medium" ${task.risk === 'medium' ? 'selected' : ''}>🔶 Medium</option>
-                                        <option value="high" ${task.risk === 'high' ? 'selected' : ''}>🔺 High</option>
+                                        <option value="low" ${task.risk === 'low' ? 'selected' : ''}>● Low</option>
+                                        <option value="medium" ${task.risk === 'medium' ? 'selected' : ''}>◆ Medium</option>
+                                        <option value="high" ${task.risk === 'high' ? 'selected' : ''}>⚠️ High</option>
                                     </select>
                                 </div>
                             </div>
@@ -829,6 +1026,7 @@ document.getElementById('taskForm').addEventListener('submit', function(e) {
         size: document.getElementById('taskSize').value,
         start: document.getElementById('taskStart').value,
         end: document.getElementById('taskEnd').value,
+        status: document.getElementById('taskStatus').value,
         risk: document.getElementById('taskRisk').value,
         riskText: document.getElementById('taskRiskText').value,
         owner: document.getElementById('taskOwner').value
@@ -1258,10 +1456,13 @@ Project Beta,Implementation,Team,P1,L,2025-02-01,2025-05-01,medium`;
 
 // Save to localStorage (program-aware)
 function saveData() {
+    console.log('Saving data for program:', currentProgram);
     if (currentProgram) {
         saveProgramData(currentProgram, projectData);
+        console.log('Saved to program_' + currentProgram);
     } else {
         localStorage.setItem('projectTimeline', JSON.stringify(projectData));
+        console.log('Saved to default projectTimeline');
     }
 }
 
@@ -1287,6 +1488,8 @@ function loadData() {
     
     // Render program selector
     renderProgramSelector();
+    
+    console.log('Loaded program:', currentProgram, 'with', projectData.workstreams?.length || 0, 'workstreams');
 }
 
 // Toast notification
