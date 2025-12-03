@@ -261,6 +261,99 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// ==================== COMMENTS ====================
+
+function addComment(taskId) {
+    const textarea = document.getElementById('newComment-' + taskId);
+    const text = textarea.value.trim();
+    
+    if (!text) {
+        showToast('❌ Please enter a comment');
+        return;
+    }
+    
+    const result = findTask(taskId);
+    if (result) {
+        if (!result.task.comments) {
+            result.task.comments = [];
+        }
+        
+        result.task.comments.push({
+            text: text,
+            date: new Date().toISOString()
+        });
+        
+        saveData();
+        
+        // Update comments list without closing panel
+        const commentsList = document.getElementById('comments-' + taskId);
+        const commentCount = document.querySelector(`#editPanel-${taskId} .comment-count`);
+        
+        if (commentsList) {
+            const newComment = document.createElement('div');
+            newComment.className = 'comment-item';
+            newComment.innerHTML = `
+                <div class="comment-meta">
+                    <span class="comment-date">Just now</span>
+                    <button class="comment-delete" onclick="deleteComment(${taskId}, ${result.task.comments.length - 1})" title="Delete">✕</button>
+                </div>
+                <div class="comment-text">${escapeHtml(text)}</div>
+            `;
+            commentsList.appendChild(newComment);
+        }
+        
+        if (commentCount) {
+            commentCount.textContent = result.task.comments.length;
+        }
+        
+        textarea.value = '';
+        showToast('💬 Comment added!');
+    }
+}
+
+function deleteComment(taskId, commentIndex) {
+    const result = findTask(taskId);
+    if (result && result.task.comments) {
+        result.task.comments.splice(commentIndex, 1);
+        saveData();
+        
+        // Refresh the panel
+        const panel = document.getElementById('editPanel-' + taskId);
+        if (panel && panel.classList.contains('pinned')) {
+            renderTimeline();
+            // Re-pin the panel after render
+            setTimeout(() => {
+                const newPanel = document.getElementById('editPanel-' + taskId);
+                if (newPanel) {
+                    newPanel.classList.add('pinned');
+                }
+            }, 50);
+        }
+        
+        showToast('🗑️ Comment deleted');
+    }
+}
+
+function formatCommentDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+}
+
 // Delete task
 function deleteTask(taskId) {
     console.log('Delete task called with ID:', taskId);
@@ -443,6 +536,30 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
                                               onchange="updateTaskNoRender(${task.id}, 'riskText', this.value)">${escapeHtml(task.riskText || '')}</textarea>
                                 </div>
                             </div>
+                            
+                            <!-- Comments Section -->
+                            <div class="comments-section">
+                                <div class="comments-header">
+                                    <label>💬 Comments</label>
+                                    <span class="comment-count">${(task.comments || []).length}</span>
+                                </div>
+                                <div class="comments-list" id="comments-${task.id}">
+                                    ${(task.comments || []).map((comment, idx) => `
+                                        <div class="comment-item">
+                                            <div class="comment-meta">
+                                                <span class="comment-date">${formatCommentDate(comment.date)}</span>
+                                                <button class="comment-delete" onclick="deleteComment(${task.id}, ${idx})" title="Delete">✕</button>
+                                            </div>
+                                            <div class="comment-text">${escapeHtml(comment.text)}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="add-comment">
+                                    <textarea id="newComment-${task.id}" rows="2" placeholder="Add a comment..."></textarea>
+                                    <button class="btn-add-comment" onclick="addComment(${task.id})">+ Add</button>
+                                </div>
+                            </div>
+                            
                             <div class="bar-edit-actions">
                                 <button class="btn-apply" onclick="applyAndClose(${task.id})">✓ Apply & Close</button>
                             </div>
