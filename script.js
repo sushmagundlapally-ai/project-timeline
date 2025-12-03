@@ -83,6 +83,74 @@ function getRiskIndicator(risk) {
     }
 }
 
+function getRiskLabel(risk) {
+    switch(risk) {
+        case 'high': return '🔺 High Risk';
+        case 'medium': return '🔶 Medium Risk';
+        case 'low': return '⚠️ Low Risk';
+        default: return 'Risk';
+    }
+}
+
+// ==================== DRAGGABLE RISK INDICATOR ====================
+
+let isDraggingRisk = false;
+let dragRiskTaskId = null;
+let dragRiskBar = null;
+
+function startDragRisk(event, taskId) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    isDraggingRisk = true;
+    dragRiskTaskId = taskId;
+    dragRiskBar = event.target.closest('.gantt-bar');
+    
+    document.addEventListener('mousemove', dragRisk);
+    document.addEventListener('mouseup', stopDragRisk);
+}
+
+function dragRisk(event) {
+    if (!isDraggingRisk || !dragRiskBar) return;
+    
+    const barRect = dragRiskBar.getBoundingClientRect();
+    const barWidth = barRect.width;
+    const mouseX = event.clientX - barRect.left;
+    
+    // Calculate percentage position (clamped between 0 and 100)
+    let percentage = (mouseX / barWidth) * 100;
+    percentage = Math.max(0, Math.min(100, percentage));
+    
+    // Update visual position immediately
+    const riskIndicator = dragRiskBar.querySelector('.risk-indicator');
+    if (riskIndicator) {
+        riskIndicator.style.left = percentage + '%';
+    }
+}
+
+function stopDragRisk(event) {
+    if (!isDraggingRisk || !dragRiskBar) return;
+    
+    const barRect = dragRiskBar.getBoundingClientRect();
+    const barWidth = barRect.width;
+    const mouseX = event.clientX - barRect.left;
+    
+    // Calculate final percentage
+    let percentage = (mouseX / barWidth) * 100;
+    percentage = Math.max(0, Math.min(100, percentage));
+    
+    // Save the position
+    updateTask(dragRiskTaskId, 'riskPosition', Math.round(percentage));
+    
+    isDraggingRisk = false;
+    dragRiskTaskId = null;
+    dragRiskBar = null;
+    
+    document.removeEventListener('mousemove', dragRisk);
+    document.removeEventListener('mouseup', stopDragRisk);
+}
+
+
 // Find task by ID
 function findTask(taskId) {
     for (const ws of projectData.workstreams) {
@@ -105,19 +173,104 @@ function updateTask(taskId, field, value) {
     const result = findTask(taskId);
     if (result) {
         result.task[field] = value;
+        
+        // Auto-extend calendar range if dates are outside current range
+        if (field === 'start' || field === 'end') {
+            const taskDate = new Date(value);
+            const currentStart = new Date(projectData.startMonth);
+            const currentEnd = new Date(projectData.endMonth);
+            
+            if (taskDate < currentStart) {
+                projectData.startMonth = new Date(taskDate.getFullYear(), taskDate.getMonth(), 1);
+                initCalendarInputs();
+            }
+            if (taskDate > currentEnd) {
+                projectData.endMonth = new Date(taskDate.getFullYear(), taskDate.getMonth(), 1);
+                initCalendarInputs();
+            }
+        }
+        
         saveData();
         renderTimeline();
         showToast('✅ Updated!');
     }
 }
 
+// Update task without re-rendering (for edit panel)
+function updateTaskNoRender(taskId, field, value) {
+    const result = findTask(taskId);
+    if (result) {
+        result.task[field] = value;
+        
+        // Auto-extend calendar range if dates are outside current range
+        if (field === 'start' || field === 'end') {
+            const taskDate = new Date(value);
+            const currentStart = new Date(projectData.startMonth);
+            const currentEnd = new Date(projectData.endMonth);
+            
+            if (taskDate < currentStart) {
+                projectData.startMonth = new Date(taskDate.getFullYear(), taskDate.getMonth(), 1);
+            }
+            if (taskDate > currentEnd) {
+                projectData.endMonth = new Date(taskDate.getFullYear(), taskDate.getMonth(), 1);
+            }
+        }
+        
+        saveData();
+    }
+}
+
+// Pin edit panel open on click
+function pinEditPanel(taskId, event) {
+    event.stopPropagation();
+    
+    // Close any other open panels
+    document.querySelectorAll('.bar-edit-panel.pinned').forEach(panel => {
+        panel.classList.remove('pinned');
+    });
+    
+    // Pin this panel
+    const panel = document.getElementById('editPanel-' + taskId);
+    if (panel) {
+        panel.classList.add('pinned');
+    }
+}
+
+// Close edit panel
+function closeEditPanel(taskId) {
+    const panel = document.getElementById('editPanel-' + taskId);
+    if (panel) {
+        panel.classList.remove('pinned');
+    }
+}
+
+// Apply changes and close panel
+function applyAndClose(taskId) {
+    closeEditPanel(taskId);
+    initCalendarInputs();
+    renderTimeline();
+    showToast('✅ Changes saved!');
+}
+
+// Close panels when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.bar-edit-panel') && !e.target.closest('.gantt-bar')) {
+        document.querySelectorAll('.bar-edit-panel.pinned').forEach(panel => {
+            panel.classList.remove('pinned');
+        });
+    }
+});
+
 // Delete task
 function deleteTask(taskId) {
+    console.log('Delete task called with ID:', taskId);
     if (!confirm('Delete this task?')) return;
+    
+    const id = Number(taskId);
     
     for (const ws of projectData.workstreams) {
         if (ws.tasks) {
-            const idx = ws.tasks.findIndex(t => t.id === taskId);
+            const idx = ws.tasks.findIndex(t => Number(t.id) === id);
             if (idx !== -1) {
                 ws.tasks.splice(idx, 1);
                 saveData();
@@ -128,7 +281,7 @@ function deleteTask(taskId) {
         }
         if (ws.subgroups) {
             for (const sg of ws.subgroups) {
-                const idx = sg.tasks.findIndex(t => t.id === taskId);
+                const idx = sg.tasks.findIndex(t => Number(t.id) === id);
                 if (idx !== -1) {
                     sg.tasks.splice(idx, 1);
                     saveData();
@@ -139,6 +292,7 @@ function deleteTask(taskId) {
             }
         }
     }
+    console.log('Task not found with ID:', id);
 }
 
 // Delete workstream
@@ -208,10 +362,90 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
                 ${pos ? `
                     <div class="gantt-bar ${task.priority.toLowerCase()}" 
                          style="left: ${pos.left}px; width: ${pos.width}px;"
-                         title="${task.name}\n${task.start} to ${task.end}\n${task.priority}, Size: ${task.size}${task.owner ? '\nOwner: ' + task.owner : ''}">
-                        ${task.risk && task.risk !== 'none' ? `<span class="risk-indicator">${getRiskIndicator(task.risk)}</span>` : ''}
+                         onclick="pinEditPanel(${task.id}, event)">
+                        ${task.risk && task.risk !== 'none' ? `
+                            <span class="risk-indicator" 
+                                  data-task-id="${task.id}"
+                                  style="left: ${task.riskPosition || 50}%;"
+                                  draggable="false"
+                                  onmousedown="startDragRisk(event, ${task.id})"
+                                  title="${task.riskText ? '' : getRiskLabel(task.risk)}">
+                                ${getRiskIndicator(task.risk)}
+                                ${task.riskText ? `
+                                    <div class="risk-tooltip ${task.risk}">
+                                        <div class="risk-tooltip-header">${getRiskLabel(task.risk)}</div>
+                                        <div class="risk-tooltip-text">${escapeHtml(task.riskText)}</div>
+                                    </div>
+                                ` : ''}
+                            </span>
+                        ` : ''}
                         <div class="bar-pattern">
                             ${Array(Math.floor(pos.width / 10)).fill('<div class="bar-segment"></div>').join('')}
+                        </div>
+                        
+                        <!-- Click Edit Panel -->
+                        <div class="bar-edit-panel" id="editPanel-${task.id}" onclick="event.stopPropagation()">
+                            <h4>
+                                <span>✏️ ${escapeHtml(task.name)}</span>
+                                <button class="panel-close-btn" onclick="closeEditPanel(${task.id})" title="Close">✕</button>
+                            </h4>
+                            <div class="bar-edit-row">
+                                <div class="bar-edit-group">
+                                    <label>Start Date</label>
+                                    <input type="date" value="${task.start}" 
+                                           onchange="updateTaskNoRender(${task.id}, 'start', this.value)">
+                                </div>
+                                <div class="bar-edit-group">
+                                    <label>End Date</label>
+                                    <input type="date" value="${task.end}" 
+                                           onchange="updateTaskNoRender(${task.id}, 'end', this.value)">
+                                </div>
+                            </div>
+                            <div class="bar-edit-row">
+                                <div class="bar-edit-group">
+                                    <label>Priority</label>
+                                    <select onchange="updateTaskNoRender(${task.id}, 'priority', this.value)">
+                                        <option value="P0" ${task.priority === 'P0' ? 'selected' : ''}>P0 - Critical</option>
+                                        <option value="P1" ${task.priority === 'P1' ? 'selected' : ''}>P1 - High</option>
+                                        <option value="P2" ${task.priority === 'P2' ? 'selected' : ''}>P2 - Medium</option>
+                                    </select>
+                                </div>
+                                <div class="bar-edit-group">
+                                    <label>Size</label>
+                                    <select onchange="updateTaskNoRender(${task.id}, 'size', this.value)">
+                                        <option value="S" ${task.size === 'S' ? 'selected' : ''}>Small</option>
+                                        <option value="M" ${task.size === 'M' ? 'selected' : ''}>Medium</option>
+                                        <option value="L" ${task.size === 'L' ? 'selected' : ''}>Large</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="bar-edit-row">
+                                <div class="bar-edit-group">
+                                    <label>Owner</label>
+                                    <input type="text" value="${escapeHtml(task.owner || '')}" 
+                                           placeholder="Enter owner"
+                                           onchange="updateTaskNoRender(${task.id}, 'owner', this.value)">
+                                </div>
+                                <div class="bar-edit-group">
+                                    <label>Risk Level</label>
+                                    <select onchange="updateTaskNoRender(${task.id}, 'risk', this.value)">
+                                        <option value="none" ${!task.risk || task.risk === 'none' ? 'selected' : ''}>None</option>
+                                        <option value="low" ${task.risk === 'low' ? 'selected' : ''}>⚠️ Low</option>
+                                        <option value="medium" ${task.risk === 'medium' ? 'selected' : ''}>🔶 Medium</option>
+                                        <option value="high" ${task.risk === 'high' ? 'selected' : ''}>🔺 High</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="bar-edit-row">
+                                <div class="bar-edit-group" style="flex: 1;">
+                                    <label>Risk Description</label>
+                                    <textarea rows="2" placeholder="Describe the risk..."
+                                              onchange="updateTaskNoRender(${task.id}, 'riskText', this.value)">${escapeHtml(task.riskText || '')}</textarea>
+                                </div>
+                            </div>
+                            <div class="bar-edit-actions">
+                                <button class="btn-apply" onclick="applyAndClose(${task.id})">✓ Apply & Close</button>
+                            </div>
                         </div>
                     </div>
                 ` : ''}
@@ -296,6 +530,8 @@ function openModal(title = 'Add Task') {
 function closeModal() {
     document.getElementById('taskModal').classList.remove('active');
     document.getElementById('taskForm').reset();
+    document.getElementById('riskTextGroup').style.display = 'none';
+    document.getElementById('taskRiskText').value = '';
 }
 
 function openWorkstreamModal() {
@@ -315,6 +551,17 @@ function addTaskToWorkstream(workstreamId) {
     openModal('Add Task');
 }
 
+// Show/hide risk text based on risk selection
+document.getElementById('taskRisk').addEventListener('change', function() {
+    const riskTextGroup = document.getElementById('riskTextGroup');
+    if (this.value !== 'none') {
+        riskTextGroup.style.display = 'block';
+    } else {
+        riskTextGroup.style.display = 'none';
+        document.getElementById('taskRiskText').value = '';
+    }
+});
+
 // Save task
 document.getElementById('taskForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -327,8 +574,28 @@ document.getElementById('taskForm').addEventListener('submit', function(e) {
         start: document.getElementById('taskStart').value,
         end: document.getElementById('taskEnd').value,
         risk: document.getElementById('taskRisk').value,
+        riskText: document.getElementById('taskRiskText').value,
         owner: document.getElementById('taskOwner').value
     };
+    
+    // Auto-extend calendar range if task dates are outside
+    const startDate = new Date(task.start);
+    const endDate = new Date(task.end);
+    const currentStart = new Date(projectData.startMonth);
+    const currentEnd = new Date(projectData.endMonth);
+    
+    let rangeChanged = false;
+    if (startDate < currentStart) {
+        projectData.startMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        rangeChanged = true;
+    }
+    if (endDate > currentEnd) {
+        projectData.endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+        rangeChanged = true;
+    }
+    if (rangeChanged) {
+        initCalendarInputs();
+    }
     
     if (currentWorkstreamId) {
         const workstream = projectData.workstreams.find(ws => ws.id === currentWorkstreamId);
@@ -538,6 +805,200 @@ document.getElementById('importBtn').addEventListener('click', function() {
 });
 
 document.getElementById('importFile').addEventListener('change', importData);
+
+document.getElementById('importGoogleBtn').addEventListener('click', openGoogleModal);
+
+// ==================== GOOGLE SHEETS IMPORT ====================
+
+function openGoogleModal() {
+    document.getElementById('googleSheetsModal').classList.add('active');
+}
+
+function closeGoogleModal() {
+    document.getElementById('googleSheetsModal').classList.remove('active');
+}
+
+function switchImportTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.import-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.import-tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tabName + 'Tab').classList.add('active');
+}
+
+async function importFromGoogleUrl() {
+    const url = document.getElementById('googleSheetUrl').value.trim();
+    
+    if (!url) {
+        showToast('❌ Please enter a Google Sheets URL');
+        return;
+    }
+    
+    // Check if it's a valid Google Sheets publish URL
+    if (!url.includes('docs.google.com/spreadsheets') || !url.includes('pub')) {
+        showToast('❌ Please use a "Publish to web" CSV URL');
+        return;
+    }
+    
+    try {
+        showToast('⏳ Fetching data from Google Sheets...');
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch');
+        
+        const csvText = await response.text();
+        parseAndImportCSV(csvText);
+        
+        closeGoogleModal();
+        showToast('✅ Imported from Google Sheets!');
+    } catch (error) {
+        console.error('Import error:', error);
+        showToast('❌ Failed to fetch. Make sure the sheet is published to web.');
+    }
+}
+
+function importFromPaste() {
+    const pasteData = document.getElementById('pasteData').value.trim();
+    
+    if (!pasteData) {
+        showToast('❌ Please paste some data');
+        return;
+    }
+    
+    parseAndImportCSV(pasteData);
+    closeGoogleModal();
+    showToast('✅ Data imported successfully!');
+}
+
+function parseAndImportCSV(csvText) {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) {
+        showToast('❌ Not enough data to import');
+        return;
+    }
+    
+    // Skip header row
+    const dataLines = lines.slice(1);
+    
+    // Group tasks by workstream
+    const workstreamMap = new Map();
+    
+    dataLines.forEach((line, index) => {
+        // Handle both comma and tab separated
+        const delimiter = line.includes('\t') ? '\t' : ',';
+        const cells = line.split(delimiter).map(cell => cell.replace(/^"|"$/g, '').trim());
+        
+        if (cells.length >= 2) {
+            const [workstreamName, taskName, owner, priority, size, start, end, risk] = cells;
+            
+            if (!workstreamMap.has(workstreamName)) {
+                workstreamMap.set(workstreamName, {
+                    id: Date.now() + index,
+                    name: workstreamName,
+                    owner: '',
+                    tasks: []
+                });
+            }
+            
+            if (taskName) {
+                workstreamMap.get(workstreamName).tasks.push({
+                    id: Date.now() + index + 1000,
+                    name: taskName,
+                    owner: owner || '',
+                    priority: priority || 'P1',
+                    size: size || 'M',
+                    start: formatDateForInput(start) || getDefaultStartDate(),
+                    end: formatDateForInput(end) || getDefaultEndDate(),
+                    risk: (risk || 'none').toLowerCase(),
+                    riskText: ''
+                });
+            }
+        }
+    });
+    
+    // Add to project data
+    workstreamMap.forEach(ws => {
+        projectData.workstreams.push(ws);
+    });
+    
+    // Extend calendar range if needed
+    extendCalendarForAllTasks();
+    
+    saveData();
+    initCalendarInputs();
+    renderTimeline();
+}
+
+function formatDateForInput(dateStr) {
+    if (!dateStr) return null;
+    
+    // Try to parse various date formats
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+    }
+    
+    // Try MM/DD/YYYY format
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        const [month, day, year] = parts;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    
+    return null;
+}
+
+function getDefaultStartDate() {
+    const date = new Date();
+    return date.toISOString().split('T')[0];
+}
+
+function getDefaultEndDate() {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    return date.toISOString().split('T')[0];
+}
+
+function extendCalendarForAllTasks() {
+    projectData.workstreams.forEach(ws => {
+        if (ws.tasks) {
+            ws.tasks.forEach(task => {
+                const startDate = new Date(task.start);
+                const endDate = new Date(task.end);
+                const currentStart = new Date(projectData.startMonth);
+                const currentEnd = new Date(projectData.endMonth);
+                
+                if (startDate < currentStart) {
+                    projectData.startMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+                }
+                if (endDate > currentEnd) {
+                    projectData.endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+                }
+            });
+        }
+    });
+}
+
+function downloadTemplate() {
+    const template = `Workstream,Task,Owner,Priority,Size,Start Date,End Date,Risk
+Project Alpha,Design Phase,John,P0,L,2025-01-01,2025-02-15,medium
+Project Alpha,Development,Sarah,P0,L,2025-02-01,2025-04-30,high
+Project Alpha,Testing,Mike,P1,M,2025-04-15,2025-05-31,low
+Project Beta,Planning,Jane,P1,S,2025-01-15,2025-02-01,none
+Project Beta,Implementation,Team,P1,L,2025-02-01,2025-05-01,medium`;
+    
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'project-timeline-template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('📥 Template downloaded!');
+}
 
 // Save to localStorage
 function saveData() {

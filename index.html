@@ -26,7 +26,10 @@
                 </div>
                 <button class="btn-icon" id="addWorkstreamBtn" title="Add Workstream">➕</button>
                 <button class="btn-icon" id="exportCSVBtn" title="Export to Google Sheets (CSV)">📊</button>
-                <button class="btn-icon" id="importBtn" title="Import Data">📤</button>
+                <button class="btn-icon" id="importGoogleBtn" title="Import from Google Sheets">
+                    <img src="https://www.gstatic.com/images/branding/product/1x/sheets_2020q4_48dp.png" alt="Sheets" style="width: 20px; height: 20px;">
+                </button>
+                <button class="btn-icon" id="importBtn" title="Import Local File">📤</button>
                 <input type="file" id="importFile" accept=".json,.csv" style="display: none;">
             </div>
         </header>
@@ -132,6 +135,10 @@
                             <input type="text" id="taskOwner" placeholder="Enter owner name">
                         </div>
                     </div>
+                    <div class="form-group" id="riskTextGroup" style="display: none;">
+                        <label for="taskRiskText">Risk Description</label>
+                        <textarea id="taskRiskText" rows="2" placeholder="Describe the risk..."></textarea>
+                    </div>
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
                         <button type="submit" class="btn-save">Save</button>
@@ -161,6 +168,60 @@
                         <button type="submit" class="btn-save">Add Workstream</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Google Sheets Import Modal -->
+        <div class="modal" id="googleSheetsModal">
+            <div class="modal-content" style="max-width: 550px;">
+                <div class="modal-header">
+                    <h2>📊 Import from Google Sheets</h2>
+                    <button class="modal-close" onclick="closeGoogleModal()">&times;</button>
+                </div>
+                <div class="google-import-content">
+                    <div class="import-tabs">
+                        <button class="import-tab active" onclick="switchImportTab('url')">🔗 Sheet URL</button>
+                        <button class="import-tab" onclick="switchImportTab('paste')">📋 Paste Data</button>
+                    </div>
+                    
+                    <div id="urlTab" class="import-tab-content active">
+                        <div class="import-instructions">
+                            <p><strong>How to get your Sheet URL:</strong></p>
+                            <ol>
+                                <li>Open your Google Sheet</li>
+                                <li>Go to <strong>File → Share → Publish to web</strong></li>
+                                <li>Select <strong>Comma-separated values (.csv)</strong></li>
+                                <li>Click <strong>Publish</strong> and copy the URL</li>
+                            </ol>
+                        </div>
+                        <div class="form-group">
+                            <label for="googleSheetUrl">Published CSV URL</label>
+                            <input type="url" id="googleSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+                        </div>
+                        <button class="btn-save" onclick="importFromGoogleUrl()" style="width: 100%;">
+                            Import from URL
+                        </button>
+                    </div>
+                    
+                    <div id="pasteTab" class="import-tab-content">
+                        <div class="import-instructions">
+                            <p><strong>Paste your data:</strong></p>
+                            <p>Copy rows from Google Sheets and paste below. Format:</p>
+                            <code>Workstream, Task, Owner, Priority, Size, Start, End, Risk</code>
+                        </div>
+                        <div class="form-group">
+                            <label for="pasteData">Paste Data (CSV or Tab-separated)</label>
+                            <textarea id="pasteData" rows="8" placeholder="Paste your data here..."></textarea>
+                        </div>
+                        <button class="btn-save" onclick="importFromPaste()" style="width: 100%;">
+                            Import Pasted Data
+                        </button>
+                    </div>
+                    
+                    <div class="import-template">
+                        <p>📥 <a href="#" onclick="downloadTemplate(); return false;">Download template</a> for the correct format</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
