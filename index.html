@@ -17,6 +17,15 @@
                 <h1>📊 Project Timeline</h1>
                 <p class="subtitle">Workstream & Task Tracker</p>
             </div>
+            <div class="health-score-panel" id="healthScorePanel">
+                <div class="health-score-circle" id="healthScoreCircle">
+                    <span class="health-score-value" id="healthScoreValue">--</span>
+                </div>
+                <div class="health-score-info">
+                    <span class="health-score-label">Program Health</span>
+                    <span class="health-score-status" id="healthScoreStatus">Loading...</span>
+                </div>
+            </div>
             <div class="header-actions">
                 <div class="program-selector">
                     <select id="programSelect" title="Select Program">
@@ -32,6 +41,7 @@
                     <input type="month" id="endMonth" title="End Month">
                 </div>
                 <button class="btn-icon" id="addWorkstreamBtn" title="Add Workstream">➕</button>
+                <button class="btn-icon" id="execSummaryBtn" title="Generate Executive Summary">📝</button>
                 <button class="btn-icon" id="exportCSVBtn" title="Export to Google Sheets (CSV)">📊</button>
                 <button class="btn-icon" id="importGoogleBtn" title="Import from Google Sheets">
                     <img src="https://www.gstatic.com/images/branding/product/1x/sheets_2020q4_48dp.png" alt="Sheets" style="width: 20px; height: 20px;">
@@ -241,6 +251,30 @@
                     <div class="import-template">
                         <p>📥 <a href="#" onclick="downloadTemplate(); return false;">Download template</a> for the correct format</p>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Executive Summary Modal -->
+    <div class="modal" id="execSummaryModal">
+        <div class="modal-content" style="max-width: 700px; max-height: 85vh;">
+            <div class="modal-header">
+                <h2>📝 Executive Summary</h2>
+                <button class="modal-close" onclick="closeExecSummary()">&times;</button>
+            </div>
+            <div class="exec-summary-content">
+                <div class="exec-summary-header">
+                    <div class="exec-date" id="execDate"></div>
+                    <div class="exec-program" id="execProgram"></div>
+                </div>
+                <div class="exec-summary-body">
+                    <textarea id="execSummaryText" readonly></textarea>
+                </div>
+                <div class="exec-summary-actions">
+                    <button class="btn-copy" onclick="copyExecSummary()">📋 Copy to Clipboard</button>
+                    <button class="btn-edit" onclick="editExecSummary()">✏️ Edit Summary</button>
+                    <button class="btn-save" onclick="closeExecSummary()">Done</button>
                 </div>
             </div>
         </div>

@@ -1998,3 +1998,171 @@ body {
     resize: vertical;
 }
 
+/* Executive Summary Modal */
+.exec-summary-content {
+    padding: 20px;
+}
+
+.exec-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.exec-date {
+    font-size: 14px;
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+.exec-program {
+    font-size: 14px;
+    color: var(--accent-purple);
+    font-weight: 500;
+}
+
+.exec-summary-body {
+    margin-bottom: 16px;
+}
+
+#execSummaryText {
+    width: 100%;
+    min-height: 400px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.8;
+    resize: vertical;
+}
+
+#execSummaryText:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.exec-summary-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-copy, .btn-edit {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.btn-copy:hover {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+}
+
+.btn-edit:hover {
+    background: var(--accent-purple);
+    border-color: var(--accent-purple);
+    color: white;
+}
+
+/* Health Score Panel */
+.health-score-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-left: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.health-score-panel:hover {
+    border-color: var(--accent-blue);
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.health-score-panel:hover .health-score-label::after {
+    content: ' (click for details)';
+    color: var(--accent-blue);
+}
+
+.health-score-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    color: white;
+    background: conic-gradient(var(--health-color, #6e7681) var(--health-pct, 0%), var(--bg-tertiary) 0%);
+    position: relative;
+}
+
+.health-score-circle::before {
+    content: '';
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+}
+
+.health-score-value {
+    position: relative;
+    z-index: 1;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.health-score-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.health-score-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.health-score-status {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.health-score-status.healthy {
+    color: #3fb950;
+}
+
+.health-score-status.attention {
+    color: #d29922;
+}
+
+.health-score-status.at-risk {
+    color: #db6d28;
+}
+
+.health-score-status.critical {
+    color: #f85149;
+}
+

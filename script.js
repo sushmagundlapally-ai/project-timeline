@@ -1253,6 +1253,9 @@ function renderTimeline() {
     
     const body = document.getElementById('timelineBody');
     body.innerHTML = projectData.workstreams.map((ws, i) => renderWorkstream(ws, i)).join('');
+    
+    // Update health score display
+    updateHealthScoreDisplay();
 }
 
 // Modal functions
@@ -1788,9 +1791,623 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// ==================== HEALTH SCORE DISPLAY ====================
+
+function updateHealthScoreDisplay() {
+    const scoreEl = document.getElementById('healthScoreValue');
+    const statusEl = document.getElementById('healthScoreStatus');
+    const circleEl = document.getElementById('healthScoreCircle');
+    
+    if (!scoreEl || !statusEl || !circleEl) return;
+    
+    // Calculate health score
+    const healthData = calculateHealthScore();
+    
+    // Update display
+    scoreEl.textContent = healthData.score;
+    statusEl.textContent = healthData.status;
+    
+    // Update colors
+    statusEl.className = 'health-score-status ' + healthData.className;
+    circleEl.style.setProperty('--health-color', healthData.color);
+    circleEl.style.setProperty('--health-pct', healthData.score + '%');
+}
+
+function calculateHealthScore() {
+    let statusCounts = {
+        'not-started': 0,
+        'in-progress': 0,
+        'blocked': 0,
+        'at-risk': 0,
+        'completed': 0,
+        'canceled': 0
+    };
+    
+    let riskCounts = { low: 0, medium: 0, high: 0 };
+    let totalTasks = 0;
+    let overdueTasks = 0;
+    const today = new Date();
+    
+    // Analyze all workstreams and tasks
+    if (projectData.workstreams) {
+        projectData.workstreams.forEach(ws => {
+            if (ws.tasks) {
+                ws.tasks.forEach(task => {
+                    totalTasks++;
+                    
+                    if (task.status && statusCounts.hasOwnProperty(task.status)) {
+                        statusCounts[task.status]++;
+                    }
+                    
+                    if (task.risk && task.risk !== 'none') {
+                        riskCounts[task.risk] = (riskCounts[task.risk] || 0) + 1;
+                    }
+                    
+                    // Check overdue
+                    if (task.endDate && task.status !== 'completed' && task.status !== 'canceled') {
+                        if (new Date(task.endDate) < today) {
+                            overdueTasks++;
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+    if (totalTasks === 0) {
+        return { score: '--', status: 'No Tasks', className: '', color: '#6e7681' };
+    }
+    
+    // Calculate percentages
+    const completedPct = (statusCounts.completed / totalTasks) * 100;
+    const blockedPct = (statusCounts.blocked / totalTasks) * 100;
+    const atRiskPct = (statusCounts['at-risk'] / totalTasks) * 100;
+    const highRiskPct = (riskCounts.high / totalTasks) * 100;
+    
+    // Health Score Algorithm
+    let healthScore = 100;
+    healthScore -= blockedPct * 2;
+    healthScore -= atRiskPct * 1.5;
+    healthScore -= highRiskPct * 1;
+    healthScore -= overdueTasks * 3;
+    healthScore += completedPct * 0.3;
+    healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
+    
+    // Determine status
+    let status, className, color;
+    if (healthScore >= 80) {
+        status = '🟢 Healthy';
+        className = 'healthy';
+        color = '#3fb950';
+    } else if (healthScore >= 60) {
+        status = '🟡 Needs Attention';
+        className = 'attention';
+        color = '#d29922';
+    } else if (healthScore >= 40) {
+        status = '🟠 At Risk';
+        className = 'at-risk';
+        color = '#db6d28';
+    } else {
+        status = '🔴 Critical';
+        className = 'critical';
+        color = '#f85149';
+    }
+    
+    return { score: healthScore, status, className, color };
+}
+
+// ==================== EXECUTIVE SUMMARY ====================
+
+function openExecSummary() {
+    const modal = document.getElementById('execSummaryModal');
+    const dateEl = document.getElementById('execDate');
+    const programEl = document.getElementById('execProgram');
+    const textEl = document.getElementById('execSummaryText');
+    
+    console.log('Opening exec summary modal...');
+    
+    // Set date
+    const today = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    dateEl.textContent = '📅 ' + today.toLocaleDateString('en-US', options);
+    
+    // Set program name
+    const programs = getProgramList();
+    const currentProg = programs.find(p => p.id === currentProgram);
+    programEl.textContent = currentProg ? '📁 ' + currentProg.name : '📁 Default Program';
+    
+    // Generate summary
+    textEl.value = generateExecSummary();
+    textEl.readOnly = true;
+    
+    modal.classList.add('active');
+    console.log('Modal should be visible now');
+}
+
+function closeExecSummary() {
+    document.getElementById('execSummaryModal').classList.remove('active');
+}
+
+function generateExecSummary() {
+    const today = new Date();
+    const programs = getProgramList();
+    const currentProg = programs.find(p => p.id === currentProgram);
+    const programName = currentProg ? currentProg.name : 'Project Timeline';
+    
+    // ==================== NLP ANALYSIS ENGINE ====================
+    
+    // Count statuses
+    let statusCounts = {
+        'not-started': 0,
+        'in-progress': 0,
+        'blocked': 0,
+        'at-risk': 0,
+        'completed': 0,
+        'canceled': 0
+    };
+    
+    let riskCounts = { low: 0, medium: 0, high: 0 };
+    let priorityCounts = { P0: 0, P1: 0, P2: 0 };
+    let totalTasks = 0;
+    let blockedTasks = [];
+    let atRiskTasks = [];
+    let upcomingDeadlines = [];
+    let overdueTasks = [];
+    let p0InProgress = [];
+    let workstreamHealth = [];
+    
+    const oneWeekFromNow = new Date();
+    oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+    
+    // Analyze all workstreams and tasks
+    if (projectData.workstreams) {
+        projectData.workstreams.forEach(ws => {
+            let wsStats = { name: ws.name, total: 0, completed: 0, blocked: 0, atRisk: 0, highRisk: 0 };
+            
+            if (ws.tasks) {
+                ws.tasks.forEach(task => {
+                    totalTasks++;
+                    wsStats.total++;
+                    
+                    // Count statuses
+                    if (task.status && statusCounts.hasOwnProperty(task.status)) {
+                        statusCounts[task.status]++;
+                        if (task.status === 'completed') wsStats.completed++;
+                        if (task.status === 'blocked') wsStats.blocked++;
+                        if (task.status === 'at-risk') wsStats.atRisk++;
+                    }
+                    
+                    // Count risks
+                    if (task.risk && task.risk !== 'none') {
+                        riskCounts[task.risk] = (riskCounts[task.risk] || 0) + 1;
+                        if (task.risk === 'high') wsStats.highRisk++;
+                    }
+                    
+                    // Count priorities
+                    if (task.priority) {
+                        priorityCounts[task.priority] = (priorityCounts[task.priority] || 0) + 1;
+                    }
+                    
+                    // Track blocked tasks
+                    if (task.status === 'blocked') {
+                        blockedTasks.push({ name: task.name, workstream: ws.name, risk: task.riskText, priority: task.priority });
+                    }
+                    
+                    // Track at-risk tasks
+                    if (task.status === 'at-risk' || task.risk === 'high') {
+                        atRiskTasks.push({ name: task.name, workstream: ws.name, risk: task.riskText, priority: task.priority });
+                    }
+                    
+                    // Track P0 in progress (critical path)
+                    if (task.priority === 'P0' && task.status === 'in-progress') {
+                        p0InProgress.push({ name: task.name, workstream: ws.name, endDate: task.endDate });
+                    }
+                    
+                    // Track overdue tasks
+                    if (task.endDate && task.status !== 'completed' && task.status !== 'canceled') {
+                        const endDate = new Date(task.endDate);
+                        if (endDate < today) {
+                            overdueTasks.push({ 
+                                name: task.name, 
+                                workstream: ws.name, 
+                                daysOverdue: Math.floor((today - endDate) / (1000 * 60 * 60 * 24)),
+                                priority: task.priority
+                            });
+                        }
+                    }
+                    
+                    // Track upcoming deadlines
+                    if (task.endDate) {
+                        const endDate = new Date(task.endDate);
+                        if (endDate >= today && endDate <= oneWeekFromNow && task.status !== 'completed') {
+                            upcomingDeadlines.push({ 
+                                name: task.name, 
+                                workstream: ws.name, 
+                                date: endDate.toLocaleDateString(),
+                                status: task.status,
+                                priority: task.priority
+                            });
+                        }
+                    }
+                });
+            }
+            
+            workstreamHealth.push(wsStats);
+        });
+    }
+    
+    // ==================== SMART ANALYSIS ====================
+    
+    // Calculate health score (0-100)
+    const completedPct = totalTasks > 0 ? (statusCounts.completed / totalTasks) * 100 : 0;
+    const blockedPct = totalTasks > 0 ? (statusCounts.blocked / totalTasks) * 100 : 0;
+    const atRiskPct = totalTasks > 0 ? (statusCounts['at-risk'] / totalTasks) * 100 : 0;
+    const highRiskPct = totalTasks > 0 ? (riskCounts.high / totalTasks) * 100 : 0;
+    
+    // Health Score Algorithm: Start at 100, deduct for issues
+    let healthScore = 100;
+    healthScore -= blockedPct * 2;        // -2 points per % blocked
+    healthScore -= atRiskPct * 1.5;       // -1.5 points per % at-risk
+    healthScore -= highRiskPct * 1;       // -1 point per % high-risk
+    healthScore -= overdueTasks.length * 3; // -3 points per overdue task
+    healthScore += completedPct * 0.3;    // Bonus for completion
+    healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
+    
+    // Determine health status
+    let healthStatus, healthEmoji, healthColor;
+    if (healthScore >= 80) {
+        healthStatus = 'Healthy'; healthEmoji = '🟢'; healthColor = 'green';
+    } else if (healthScore >= 60) {
+        healthStatus = 'Needs Attention'; healthEmoji = '🟡'; healthColor = 'yellow';
+    } else if (healthScore >= 40) {
+        healthStatus = 'At Risk'; healthEmoji = '🟠'; healthColor = 'orange';
+    } else {
+        healthStatus = 'Critical'; healthEmoji = '🔴'; healthColor = 'red';
+    }
+    
+    // Generate smart recommendations
+    let recommendations = [];
+    
+    if (blockedTasks.length > 0) {
+        const p0Blocked = blockedTasks.filter(t => t.priority === 'P0').length;
+        if (p0Blocked > 0) {
+            recommendations.push(`🚨 URGENT: ${p0Blocked} P0 critical task(s) are blocked. Immediate escalation recommended.`);
+        } else {
+            recommendations.push(`⚠️ ${blockedTasks.length} task(s) are blocked. Review blockers in next standup.`);
+        }
+    }
+    
+    if (overdueTasks.length > 0) {
+        const maxOverdue = Math.max(...overdueTasks.map(t => t.daysOverdue));
+        recommendations.push(`📅 ${overdueTasks.length} task(s) are overdue (up to ${maxOverdue} days). Consider timeline adjustment.`);
+    }
+    
+    if (riskCounts.high > 2) {
+        recommendations.push(`🔺 High concentration of high-risk items (${riskCounts.high}). Risk mitigation meeting suggested.`);
+    }
+    
+    if (statusCounts['in-progress'] > totalTasks * 0.6) {
+        recommendations.push(`📊 ${Math.round(statusCounts['in-progress'] / totalTasks * 100)}% of tasks in-progress. Consider completing items before starting new ones.`);
+    }
+    
+    if (priorityCounts.P0 > priorityCounts.P1 + priorityCounts.P2) {
+        recommendations.push(`🎯 Heavy P0 load (${priorityCounts.P0} critical tasks). Review prioritization to prevent burnout.`);
+    }
+    
+    if (upcomingDeadlines.filter(d => d.priority === 'P0').length >= 3) {
+        recommendations.push(`⏰ ${upcomingDeadlines.filter(d => d.priority === 'P0').length} P0 deadlines in next 7 days. Resource focus required.`);
+    }
+    
+    if (recommendations.length === 0) {
+        recommendations.push(`✅ Program is on track. Continue monitoring progress.`);
+    }
+    
+    // ==================== GENERATE NARRATIVE ====================
+    
+    // Opening narrative
+    let openingNarrative = '';
+    if (healthScore >= 80) {
+        openingNarrative = `The ${programName} program is performing well and is on track to meet its objectives. With ${Math.round(completedPct)}% of tasks completed and minimal blockers, the team is maintaining good momentum.`;
+    } else if (healthScore >= 60) {
+        openingNarrative = `The ${programName} program requires attention. While progress is being made with ${Math.round(completedPct)}% completion, there are ${statusCounts.blocked + statusCounts['at-risk']} items that need immediate focus to maintain timeline commitments.`;
+    } else if (healthScore >= 40) {
+        openingNarrative = `The ${programName} program is at risk. With only ${Math.round(completedPct)}% of tasks completed and ${statusCounts.blocked} blocked items, immediate intervention is recommended to get back on track.`;
+    } else {
+        openingNarrative = `The ${programName} program is in critical condition and requires urgent executive attention. Multiple blockers and high-risk items are impacting delivery. A recovery plan should be established immediately.`;
+    }
+    
+    // Risk narrative
+    let riskNarrative = '';
+    if (riskCounts.high > 0 || blockedTasks.length > 0 || overdueTasks.length > 0) {
+        let riskParts = [];
+        if (riskCounts.high > 0) {
+            riskParts.push(`${riskCounts.high} high-risk item${riskCounts.high > 1 ? 's' : ''} identified that could impact delivery`);
+        }
+        if (blockedTasks.length > 0) {
+            const p0Blocked = blockedTasks.filter(t => t.priority === 'P0').length;
+            if (p0Blocked > 0) {
+                riskParts.push(`${p0Blocked} critical P0 task${p0Blocked > 1 ? 's are' : ' is'} currently blocked`);
+            } else {
+                riskParts.push(`${blockedTasks.length} task${blockedTasks.length > 1 ? 's are' : ' is'} blocked and awaiting resolution`);
+            }
+        }
+        if (overdueTasks.length > 0) {
+            const maxOverdue = Math.max(...overdueTasks.map(t => t.daysOverdue));
+            riskParts.push(`${overdueTasks.length} task${overdueTasks.length > 1 ? 's are' : ' is'} overdue by up to ${maxOverdue} days`);
+        }
+        riskNarrative = 'Key concerns: ' + riskParts.join('; ') + '.';
+    } else {
+        riskNarrative = 'No significant risks or blockers identified at this time.';
+    }
+    
+    // Progress narrative
+    let progressNarrative = '';
+    const inProgressCount = statusCounts['in-progress'];
+    if (inProgressCount > 0) {
+        progressNarrative = `Currently, ${inProgressCount} task${inProgressCount > 1 ? 's are' : ' is'} actively in progress`;
+        if (p0InProgress.length > 0) {
+            progressNarrative += `, including ${p0InProgress.length} critical P0 item${p0InProgress.length > 1 ? 's' : ''} on the critical path`;
+        }
+        progressNarrative += '.';
+    }
+    
+    // Deadline narrative
+    let deadlineNarrative = '';
+    if (upcomingDeadlines.length > 0) {
+        const p0Deadlines = upcomingDeadlines.filter(d => d.priority === 'P0').length;
+        deadlineNarrative = `Looking ahead, ${upcomingDeadlines.length} task${upcomingDeadlines.length > 1 ? 's have' : ' has'} deadlines in the next 7 days`;
+        if (p0Deadlines > 0) {
+            deadlineNarrative += `, with ${p0Deadlines} being critical priority`;
+        }
+        deadlineNarrative += '. Close monitoring recommended.';
+    }
+    
+    // Workstream narrative
+    let wsNarrative = '';
+    if (workstreamHealth.length > 0) {
+        const healthyWs = workstreamHealth.filter(ws => ws.blocked === 0 && ws.highRisk === 0);
+        const troubledWs = workstreamHealth.filter(ws => ws.blocked > 0 || ws.highRisk > 0);
+        
+        if (troubledWs.length > 0) {
+            wsNarrative = `Workstream analysis shows ${troubledWs.length} workstream${troubledWs.length > 1 ? 's' : ''} requiring attention: ${troubledWs.map(w => w.name).join(', ')}.`;
+        } else if (healthyWs.length === workstreamHealth.length) {
+            wsNarrative = `All ${workstreamHealth.length} workstreams are progressing without major issues.`;
+        }
+    }
+    
+    // ==================== BUILD SUMMARY ====================
+    
+    let summary = `══════════════════════════════════════════════════════════════
+                    EXECUTIVE SUMMARY
+══════════════════════════════════════════════════════════════
+📁 Program: ${programName}
+📅 Date: ${today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+┌─────────────────────────────────────────────────────────────┐
+│  ${healthEmoji} PROGRAM HEALTH: ${healthStatus.toUpperCase()} (Score: ${healthScore}/100)
+└─────────────────────────────────────────────────────────────┘
+
+📝 SUMMARY
+──────────
+${openingNarrative}
+
+${riskNarrative}
+
+${progressNarrative}
+
+${deadlineNarrative}
+
+${wsNarrative}
+
+📊 STATUS OVERVIEW
+──────────────────
+Total Tasks: ${totalTasks}
+`;
+
+    // Visual progress bar
+    const progressBar = '█'.repeat(Math.floor(completedPct / 5)) + '░'.repeat(20 - Math.floor(completedPct / 5));
+    summary += `Progress: [${progressBar}] ${Math.round(completedPct)}%\n\n`;
+
+    summary += `  ✅ Completed:   ${statusCounts.completed.toString().padStart(3)} (${Math.round(completedPct)}%)
+  🔄 In Progress: ${statusCounts['in-progress'].toString().padStart(3)} (${totalTasks > 0 ? Math.round(statusCounts['in-progress'] / totalTasks * 100) : 0}%)
+  ⏳ Not Started: ${statusCounts['not-started'].toString().padStart(3)}
+  🚫 Blocked:     ${statusCounts.blocked.toString().padStart(3)} ${statusCounts.blocked > 0 ? '⚠️' : ''}
+  ⚠️ At Risk:     ${statusCounts['at-risk'].toString().padStart(3)}
+  ❌ Canceled:    ${statusCounts.canceled.toString().padStart(3)}
+
+🎯 PRIORITY MATRIX
+──────────────────
+  🔴 P0 Critical: ${priorityCounts.P0} ${priorityCounts.P0 > 5 ? '(heavy load)' : ''}
+  🟠 P1 High:     ${priorityCounts.P1}
+  🟢 P2 Medium:   ${priorityCounts.P2}
+
+⚡ RISK ASSESSMENT
+──────────────────
+  🔺 High Risk:   ${riskCounts.high} ${riskCounts.high > 2 ? '⚠️ Elevated' : ''}
+  🔶 Medium Risk: ${riskCounts.medium}
+  🔷 Low Risk:    ${riskCounts.low}
+`;
+
+    // Smart Recommendations
+    summary += `
+💡 AI RECOMMENDATIONS
+──────────────────────
+`;
+    recommendations.forEach((rec, i) => {
+        summary += `${i + 1}. ${rec}\n`;
+    });
+
+    // Critical Path (P0 in progress)
+    if (p0InProgress.length > 0) {
+        summary += `
+🔥 CRITICAL PATH (P0 In-Progress)
+──────────────────────────────────
+`;
+        p0InProgress.forEach(t => {
+            const deadline = t.endDate ? new Date(t.endDate).toLocaleDateString() : 'No deadline';
+            summary += `• ${t.name} (${t.workstream}) → ${deadline}\n`;
+        });
+    }
+
+    // Overdue Items
+    if (overdueTasks.length > 0) {
+        summary += `
+🚨 OVERDUE ITEMS (${overdueTasks.length})
+──────────────────────
+`;
+        overdueTasks.sort((a, b) => b.daysOverdue - a.daysOverdue);
+        overdueTasks.forEach(t => {
+            const priorityIcon = t.priority === 'P0' ? '🔴' : t.priority === 'P1' ? '🟠' : '🟢';
+            summary += `• ${priorityIcon} ${t.name} - ${t.daysOverdue} days overdue\n`;
+        });
+    }
+
+    // Blocked Items
+    if (blockedTasks.length > 0) {
+        summary += `
+🚫 BLOCKED ITEMS (${blockedTasks.length})
+─────────────────────
+`;
+        blockedTasks.forEach(t => {
+            const priorityIcon = t.priority === 'P0' ? '🔴' : t.priority === 'P1' ? '🟠' : '🟢';
+            summary += `• ${priorityIcon} ${t.name} (${t.workstream})${t.risk ? '\n  └─ ' + t.risk : ''}\n`;
+        });
+    }
+
+    // Upcoming Deadlines
+    if (upcomingDeadlines.length > 0) {
+        summary += `
+📅 UPCOMING DEADLINES (Next 7 Days)
+────────────────────────────────────
+`;
+        upcomingDeadlines.sort((a, b) => new Date(a.date) - new Date(b.date));
+        upcomingDeadlines.forEach(t => {
+            const priorityIcon = t.priority === 'P0' ? '🔴' : t.priority === 'P1' ? '🟠' : '🟢';
+            const statusIcon = t.status === 'in-progress' ? '🔄' : '⏳';
+            summary += `• ${t.date}: ${priorityIcon} ${t.name} ${statusIcon}\n`;
+        });
+    }
+
+    // Workstream Health
+    summary += `
+📋 WORKSTREAM HEALTH
+─────────────────────
+`;
+    if (workstreamHealth.length > 0) {
+        workstreamHealth.forEach((ws, idx) => {
+            const pct = ws.total > 0 ? Math.round((ws.completed / ws.total) * 100) : 0;
+            const bar = '█'.repeat(Math.floor(pct / 10)) + '░'.repeat(10 - Math.floor(pct / 10));
+            let healthIndicator = '🟢';
+            if (ws.blocked > 0 || ws.highRisk > 1) healthIndicator = '🔴';
+            else if (ws.atRisk > 0 || ws.highRisk > 0) healthIndicator = '🟡';
+            
+            summary += `${healthIndicator} ${ws.name}\n`;
+            summary += `   [${bar}] ${pct}% (${ws.completed}/${ws.total})`;
+            if (ws.blocked > 0) summary += ` | 🚫${ws.blocked} blocked`;
+            if (ws.highRisk > 0) summary += ` | 🔺${ws.highRisk} high-risk`;
+            summary += '\n';
+        });
+    } else {
+        summary += 'No workstreams defined yet.\n';
+    }
+
+    // Closing narrative
+    let closingNarrative = '';
+    if (healthScore >= 80) {
+        closingNarrative = `Overall, the program is healthy. Continue the current execution rhythm and maintain focus on completing in-progress items. No immediate escalation required.`;
+    } else if (healthScore >= 60) {
+        closingNarrative = `The program needs focused attention on the blocked and at-risk items listed above. Recommend addressing blockers in the next sprint planning and monitoring at-risk items daily.`;
+    } else if (healthScore >= 40) {
+        closingNarrative = `Immediate action is required. Schedule a program review meeting to address blockers, reassess timelines for overdue items, and establish a recovery plan. Consider adding resources if necessary.`;
+    } else {
+        closingNarrative = `This program requires executive intervention. Recommend an emergency review to assess root causes, reallocate resources, and potentially re-baseline the schedule. Stakeholder communication about delays should be prepared.`;
+    }
+    
+    // Next steps based on analysis
+    let nextSteps = [];
+    if (blockedTasks.filter(t => t.priority === 'P0').length > 0) {
+        nextSteps.push('Escalate P0 blockers to leadership immediately');
+    }
+    if (overdueTasks.length > 0) {
+        nextSteps.push('Review and update timelines for overdue items');
+    }
+    if (riskCounts.high > 2) {
+        nextSteps.push('Schedule risk mitigation workshop');
+    }
+    if (upcomingDeadlines.filter(d => d.priority === 'P0').length >= 2) {
+        nextSteps.push('Ensure P0 deadlines have adequate resource coverage');
+    }
+    if (statusCounts['in-progress'] > totalTasks * 0.5) {
+        nextSteps.push('Focus on completing in-progress items before starting new work');
+    }
+    if (nextSteps.length === 0) {
+        nextSteps.push('Continue current execution plan');
+        nextSteps.push('Monitor progress in daily standups');
+    }
+
+    summary += `
+📝 CONCLUSION
+─────────────
+${closingNarrative}
+
+📌 RECOMMENDED NEXT STEPS
+─────────────────────────
+`;
+    nextSteps.forEach((step, i) => {
+        summary += `${i + 1}. ${step}\n`;
+    });
+
+    summary += `
+══════════════════════════════════════════════════════════════
+Generated by Project Timeline AI Analysis Engine
+${today.toLocaleString()}
+══════════════════════════════════════════════════════════════
+`;
+
+    return summary;
+}
+
+function copyExecSummary() {
+    const textEl = document.getElementById('execSummaryText');
+    textEl.select();
+    document.execCommand('copy');
+    showToast('📋 Summary copied to clipboard!');
+}
+
+function editExecSummary() {
+    const textEl = document.getElementById('execSummaryText');
+    textEl.readOnly = !textEl.readOnly;
+    if (!textEl.readOnly) {
+        textEl.focus();
+        showToast('✏️ You can now edit the summary');
+    } else {
+        showToast('🔒 Summary is now read-only');
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
     initCalendarInputs();
     renderTimeline();
+    updateHealthScoreDisplay();
+    
+    // Add event listener for exec summary button
+    const execBtn = document.getElementById('execSummaryBtn');
+    if (execBtn) {
+        execBtn.addEventListener('click', function() {
+            console.log('Exec Summary button clicked!');
+            openExecSummary();
+        });
+        console.log('Exec Summary button listener attached');
+    } else {
+        console.error('Exec Summary button not found!');
+    }
+    
+    // Make health score panel clickable to open exec summary
+    const healthPanel = document.getElementById('healthScorePanel');
+    if (healthPanel) {
+        healthPanel.style.cursor = 'pointer';
+        healthPanel.addEventListener('click', openExecSummary);
+    }
 });
