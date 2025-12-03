@@ -332,7 +332,245 @@ document.addEventListener('click', function(e) {
             menu.classList.remove('open');
         });
     }
+    if (!e.target.closest('.dependency-wrapper')) {
+        document.querySelectorAll('.dependency-menu.open').forEach(menu => {
+            menu.classList.remove('open');
+        });
+    }
 });
+
+// ==================== DEPENDENCIES ====================
+
+function toggleDependencyMenu(event, taskId) {
+    event.stopPropagation();
+    
+    // Close all other open menus
+    document.querySelectorAll('.dependency-menu.open').forEach(menu => {
+        menu.classList.remove('open');
+    });
+    
+    const menu = document.getElementById('depMenu-' + taskId);
+    if (menu) {
+        menu.classList.toggle('open');
+    }
+}
+
+function saveDependency(taskId) {
+    const depType = document.getElementById('depType-' + taskId).value;
+    const depRow = document.getElementById('depRow-' + taskId).value;
+    
+    const result = findTask(taskId);
+    if (result) {
+        result.task.depType = depType;
+        result.task.depRow = depRow ? parseInt(depRow) : null;
+        saveData();
+        renderTimeline();
+        
+        if (depType && depRow) {
+            showToast(`🔗 Linked to Row ${depRow}`);
+            highlightRow(parseInt(depRow));
+        } else {
+            showToast('🔗 Dependency removed');
+        }
+    }
+    
+    // Close menu
+    document.querySelectorAll('.dependency-menu.open').forEach(menu => {
+        menu.classList.remove('open');
+    });
+}
+
+function highlightRow(rowNum) {
+    // Find and highlight the target row briefly
+    const rows = document.querySelectorAll('.task-row');
+    rows.forEach(row => {
+        const rowNumEl = row.querySelector('.row-number');
+        if (rowNumEl && parseInt(rowNumEl.textContent) === rowNum) {
+            row.classList.add('highlight-dep');
+            setTimeout(() => {
+                row.classList.remove('highlight-dep');
+            }, 2000);
+        }
+    });
+}
+
+// Assign row numbers before rendering
+function assignRowNumbers() {
+    let rowNum = 1;
+    projectData.workstreams.forEach(ws => {
+        if (ws.tasks) {
+            ws.tasks.forEach(task => {
+                task.rowNum = rowNum++;
+            });
+        }
+        if (ws.subgroups) {
+            ws.subgroups.forEach(sg => {
+                sg.tasks.forEach(task => {
+                    task.rowNum = rowNum++;
+                });
+            });
+        }
+    });
+}
+
+// Get dependency icon based on type
+function getDependencyIcon(task) {
+    if (task.depType === 'parallel') {
+        return '∥';
+    } else if (task.depType === 'dependency') {
+        return '∞';
+    }
+    return '○';
+}
+
+// ==================== DRAG AND DROP ====================
+
+let draggedTaskId = null;
+
+function handleDragStart(event, taskId) {
+    draggedTaskId = taskId;
+    event.target.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', taskId);
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    
+    const taskRow = event.target.closest('.task-row');
+    if (taskRow && !taskRow.classList.contains('dragging')) {
+        // Remove drag-over from all rows
+        document.querySelectorAll('.task-row.drag-over').forEach(row => {
+            row.classList.remove('drag-over');
+        });
+        taskRow.classList.add('drag-over');
+    }
+}
+
+function handleDrop(event, targetTaskId) {
+    event.preventDefault();
+    
+    if (draggedTaskId === targetTaskId) return;
+    
+    // Find source and target tasks
+    const sourceTask = findTask(draggedTaskId);
+    const targetTask = findTask(targetTaskId);
+    
+    if (!sourceTask || !targetTask) return;
+    
+    // Find workstreams
+    const sourceWs = projectData.workstreams.find(ws => 
+        ws.tasks && ws.tasks.some(t => t.id === draggedTaskId)
+    );
+    const targetWs = projectData.workstreams.find(ws => 
+        ws.tasks && ws.tasks.some(t => t.id === targetTaskId)
+    );
+    
+    if (!sourceWs || !targetWs) return;
+    
+    // Remove from source
+    const sourceIndex = sourceWs.tasks.findIndex(t => t.id === draggedTaskId);
+    const [movedTask] = sourceWs.tasks.splice(sourceIndex, 1);
+    
+    // Insert at target position
+    const targetIndex = targetWs.tasks.findIndex(t => t.id === targetTaskId);
+    targetWs.tasks.splice(targetIndex, 0, movedTask);
+    
+    saveData();
+    renderTimeline();
+    showToast('✅ Task moved!');
+}
+
+function handleDragEnd(event) {
+    draggedTaskId = null;
+    event.target.classList.remove('dragging');
+    document.querySelectorAll('.task-row.drag-over').forEach(row => {
+        row.classList.remove('drag-over');
+    });
+}
+
+// ==================== WORKSTREAM DRAG AND DROP ====================
+
+let draggedWorkstreamId = null;
+
+function startWorkstreamDrag(event, workstreamId) {
+    event.stopPropagation();
+    draggedWorkstreamId = workstreamId;
+    
+    const wsRow = document.querySelector(`.workstream-row[data-workstream-id="${workstreamId}"]`);
+    if (wsRow) {
+        wsRow.classList.add('ws-dragging');
+    }
+    
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', 'ws-' + workstreamId);
+}
+
+function handleWorkstreamDragStart(event, workstreamId) {
+    // Prevent if not clicking drag handle
+    if (!event.target.classList.contains('ws-drag-handle')) {
+        event.preventDefault();
+        return false;
+    }
+    startWorkstreamDrag(event, workstreamId);
+}
+
+function handleWorkstreamDragOver(event) {
+    if (!draggedWorkstreamId) return;
+    
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    
+    const wsRow = event.target.closest('.workstream-row');
+    if (wsRow && !wsRow.classList.contains('ws-dragging')) {
+        document.querySelectorAll('.workstream-row.ws-drag-over').forEach(row => {
+            row.classList.remove('ws-drag-over');
+        });
+        wsRow.classList.add('ws-drag-over');
+    }
+}
+
+function handleWorkstreamDrop(event, targetWorkstreamId) {
+    if (!draggedWorkstreamId) return;
+    
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (draggedWorkstreamId === targetWorkstreamId) {
+        handleWorkstreamDragEnd(event);
+        return;
+    }
+    
+    // Find indices
+    const sourceIndex = projectData.workstreams.findIndex(ws => ws.id === draggedWorkstreamId);
+    const targetIndex = projectData.workstreams.findIndex(ws => ws.id === targetWorkstreamId);
+    
+    if (sourceIndex === -1 || targetIndex === -1) {
+        handleWorkstreamDragEnd(event);
+        return;
+    }
+    
+    // Remove and insert
+    const [movedWorkstream] = projectData.workstreams.splice(sourceIndex, 1);
+    projectData.workstreams.splice(targetIndex, 0, movedWorkstream);
+    
+    draggedWorkstreamId = null;
+    
+    saveData();
+    renderTimeline();
+    showToast('✅ Workstream moved with all tasks!');
+}
+
+function handleWorkstreamDragEnd(event) {
+    draggedWorkstreamId = null;
+    document.querySelectorAll('.workstream-row.ws-dragging').forEach(row => {
+        row.classList.remove('ws-dragging');
+    });
+    document.querySelectorAll('.workstream-row.ws-drag-over').forEach(row => {
+        row.classList.remove('ws-drag-over');
+    });
+}
 
 function renderStatusCircle(taskId, status) {
     const currentStatus = status || 'not-started';
@@ -722,8 +960,44 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
     const months = getMonths();
     
     return `
-        <div class="task-row" data-task-id="${task.id}">
+        <div class="task-row" data-task-id="${task.id}" data-workstream-id="${task.wsId}" draggable="true"
+             ondragstart="handleDragStart(event, ${task.id})"
+             ondragover="handleDragOver(event)"
+             ondrop="handleDrop(event, ${task.id})"
+             ondragend="handleDragEnd(event)">
             <div class="task-label ${labelClass}">
+                <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
+                <span class="row-number">${task.rowNum || ''}</span>
+                <div class="dependency-wrapper" id="depWrapper-${task.id}">
+                    <span class="dependency-badge ${task.depType || ''}" 
+                          onclick="toggleDependencyMenu(event, ${task.id})"
+                          title="${task.depType === 'parallel' ? 'Parallel: Row ' + task.depRow : task.depType === 'dependency' ? 'Depends on: Row ' + task.depRow : 'Add dependency'}">
+                        ${getDependencyIcon(task)}
+                    </span>
+                    ${task.depType && task.depRow ? `
+                        <span class="dep-arrow ${task.depRow < task.rowNum ? 'up' : 'down'}" 
+                              onclick="highlightRow(${task.depRow})"
+                              title="Go to Row ${task.depRow}">
+                            ${task.depRow < task.rowNum ? '↑' : '↓'}
+                            <span class="dep-arrow-label">${task.depRow}</span>
+                        </span>
+                    ` : ''}
+                    <div class="dependency-menu" id="depMenu-${task.id}">
+                        <div class="dep-menu-header">Link to Row</div>
+                        <div class="dep-menu-row">
+                            <select id="depType-${task.id}" class="dep-type-select">
+                                <option value="" ${!task.depType ? 'selected' : ''}>None</option>
+                                <option value="parallel" ${task.depType === 'parallel' ? 'selected' : ''}>∥ Parallel</option>
+                                <option value="dependency" ${task.depType === 'dependency' ? 'selected' : ''}>∞ Depends On</option>
+                            </select>
+                        </div>
+                        <div class="dep-menu-row">
+                            <input type="number" id="depRow-${task.id}" class="dep-row-input" 
+                                   placeholder="Row #" value="${task.depRow || ''}" min="1">
+                        </div>
+                        <button class="dep-save-btn" onclick="saveDependency(${task.id})">Save</button>
+                    </div>
+                </div>
                 <div class="status-badge-wrapper" id="statusWrapper-${task.id}">
                     <span class="status-badge ${task.status || 'not-started'}" 
                           onclick="toggleStatusMenu(event, ${task.id})">
@@ -943,9 +1217,15 @@ function renderWorkstream(workstream, index) {
     }
     
     return `
-        <div class="workstream-row" data-workstream-id="${workstream.id}">
+        <div class="workstream-row" data-workstream-id="${workstream.id}"
+             ondragover="handleWorkstreamDragOver(event)"
+             ondrop="handleWorkstreamDrop(event, ${workstream.id})"
+             ondragend="handleWorkstreamDragEnd(event)">
             <div class="workstream-header">
                 <div class="workstream-label">
+                    <span class="ws-drag-handle" draggable="true" 
+                          ondragstart="startWorkstreamDrag(event, ${workstream.id})"
+                          title="Drag to reorder workstream">⋮⋮</span>
                     <span class="workstream-number">${index + 1}</span>
                     <input type="text" class="inline-edit workstream-name-edit" value="${escapeHtml(workstream.name)}"
                            onchange="updateWorkstreamName(${workstream.id}, this.value)" title="Click to edit workstream name">
@@ -968,6 +1248,7 @@ function renderWorkstream(workstream, index) {
 
 // Render entire timeline
 function renderTimeline() {
+    assignRowNumbers();
     renderMonthsHeader();
     
     const body = document.getElementById('timelineBody');
