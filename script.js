@@ -1,3 +1,18 @@
+/**
+ * Project Timeline - Workstream & Task Tracker
+ * 
+ * Created by: Sushma Gundlapally
+ * Copyright © 2025 Sushma Gundlapally. All rights reserved.
+ * 
+ * Features:
+ * - Visual Gantt chart for workstreams and tasks
+ * - AI-powered health scoring and executive summaries
+ * - Drag-and-drop task reordering
+ * - Multi-program management
+ * - Google Sheets import/export
+ * - Risk tracking and status management
+ */
+
 // Project Timeline Data
 let projectData = {
     startMonth: new Date(2024, 11, 1), // December 2024
