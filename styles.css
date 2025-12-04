@@ -2166,3 +2166,219 @@ body {
     color: #f85149;
 }
 
+/* Task Name Wrapper - Full View */
+.task-name-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    max-width: 160px;
+}
+
+.btn-view-task {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.task-row:hover .btn-view-task {
+    opacity: 1;
+}
+
+.btn-view-task:hover {
+    color: var(--accent-blue);
+    transform: scale(1.2);
+}
+
+/* Task Name Tooltip */
+.task-name-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-blue);
+    border-radius: 8px;
+    padding: 12px 14px;
+    min-width: 250px;
+    max-width: 400px;
+    font-size: 13px;
+    color: var(--text-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.5;
+}
+
+.task-name-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 16px;
+    border: 8px solid transparent;
+    border-bottom-color: var(--accent-blue);
+}
+
+.task-name-wrapper:hover .task-name-tooltip {
+    display: block;
+    animation: fadeIn 0.15s ease;
+}
+
+.task-name-tooltip .tooltip-desc {
+    display: block;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* Bulk Upload Modal */
+.bulk-upload-content {
+    padding-top: 8px;
+}
+
+.bulk-upload-content .import-instructions {
+    margin-bottom: 16px;
+}
+
+.bulk-upload-content textarea {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* View Task Details Modal */
+.view-task-content {
+    padding: 8px 0;
+}
+
+.view-task-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent-blue);
+    word-break: break-word;
+}
+
+.view-task-section {
+    margin-bottom: 16px;
+}
+
+.view-task-section label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.view-task-value {
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.view-task-value.description {
+    min-height: 60px;
+    white-space: pre-wrap;
+}
+
+.view-task-value.risk {
+    display: inline-block;
+    padding: 4px 10px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.view-task-value.risk-text {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.view-task-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.view-task-item {
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.view-task-item label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.view-task-item span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.view-task-comments {
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    padding: 12px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.view-comment {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--accent-purple);
+}
+
+.view-comment:last-child {
+    margin-bottom: 0;
+}
+
+.view-comment-date {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.view-comment-text {
+    font-size: 12px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.no-comments {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 16px;
+}
+

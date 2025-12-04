@@ -109,6 +109,10 @@
                         <label for="taskName">Task Name</label>
                         <input type="text" id="taskName" required placeholder="Enter task name">
                     </div>
+                    <div class="form-group">
+                        <label for="taskDescription">Description (optional)</label>
+                        <textarea id="taskDescription" rows="2" placeholder="Enter task description..."></textarea>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="taskPriority">Priority</label>
@@ -250,6 +254,91 @@
                     
                     <div class="import-template">
                         <p>📥 <a href="#" onclick="downloadTemplate(); return false;">Download template</a> for the correct format</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Upload Modal -->
+    <div class="modal" id="bulkUploadModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>📋 Bulk Upload Tasks</h2>
+                <button class="modal-close" onclick="closeBulkUploadModal()">&times;</button>
+            </div>
+            <div class="bulk-upload-content">
+                <div class="import-instructions">
+                    <p><strong>Paste your tasks below:</strong></p>
+                    <p>Format (tab, comma, or pipe separated):</p>
+                    <code>Task Name, Owner, Priority (P0/P1/P2), Size (S/M/L), Start Date, End Date, Risk, Description</code>
+                    <p style="margin-top: 8px; color: var(--text-muted); font-size: 12px;">
+                        💡 Tip: Copy directly from Google Sheets or Excel. Only Task Name is required.
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="bulkTasksData">Tasks Data</label>
+                    <textarea id="bulkTasksData" rows="10" placeholder="Email engine improvements, John, P0, L, 2025-01-01, 2025-03-31, high, Critical for Q1
+Athena Auth spike, Sarah, P0, S, 2025-01-15, 2025-02-01, medium
+Falcon Dev Ready, Mike, P0, L, 2025-02-01, 2025-04-30"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeBulkUploadModal()">Cancel</button>
+                    <button type="button" class="btn-save" onclick="processBulkUpload()">📥 Import Tasks</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Task Details Modal -->
+    <div class="modal" id="viewTaskModal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2>📄 Task Details</h2>
+                <button class="modal-close" onclick="closeViewTaskModal()">&times;</button>
+            </div>
+            <div class="view-task-content">
+                <h3 class="view-task-title" id="viewTaskTitle">Task Name</h3>
+                
+                <div class="view-task-section">
+                    <label>📝 Description</label>
+                    <div class="view-task-value description" id="viewTaskDescription">No description added.</div>
+                </div>
+                
+                <div class="view-task-grid">
+                    <div class="view-task-item">
+                        <label>👤 Owner</label>
+                        <span id="viewTaskOwner">Unassigned</span>
+                    </div>
+                    <div class="view-task-item">
+                        <label>🎯 Priority</label>
+                        <span id="viewTaskPriority">P1</span>
+                    </div>
+                    <div class="view-task-item">
+                        <label>📏 Size</label>
+                        <span id="viewTaskSize">M</span>
+                    </div>
+                    <div class="view-task-item">
+                        <label>📊 Status</label>
+                        <span id="viewTaskStatus">Not Started</span>
+                    </div>
+                </div>
+                
+                <div class="view-task-section">
+                    <label>📅 Timeline</label>
+                    <div class="view-task-value" id="viewTaskDates">Start → End</div>
+                </div>
+                
+                <div class="view-task-section" id="viewRiskSection">
+                    <label>⚠️ Risk</label>
+                    <div class="view-task-value risk" id="viewTaskRisk">None</div>
+                    <div class="view-task-value risk-text" id="viewTaskRiskText">No risk details.</div>
+                </div>
+                
+                <div class="view-task-section">
+                    <label>💬 Comments</label>
+                    <div class="view-task-comments" id="viewTaskComments">
+                        <div class="no-comments">No comments yet.</div>
                     </div>
                 </div>
             </div>

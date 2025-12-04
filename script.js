@@ -423,6 +423,154 @@ function getDependencyIcon(task) {
     return '○';
 }
 
+// ==================== BULK UPLOAD ====================
+
+let bulkUploadWorkstreamId = null;
+
+function openBulkUploadModal(workstreamId) {
+    bulkUploadWorkstreamId = workstreamId;
+    document.getElementById('bulkUploadModal').classList.add('active');
+    document.getElementById('bulkTasksData').value = '';
+    document.getElementById('bulkTasksData').focus();
+}
+
+function closeBulkUploadModal() {
+    document.getElementById('bulkUploadModal').classList.remove('active');
+    bulkUploadWorkstreamId = null;
+}
+
+function processBulkUpload() {
+    const textarea = document.getElementById('bulkTasksData');
+    const data = textarea.value.trim();
+    
+    if (!data) {
+        showToast('❌ Please enter task data');
+        return;
+    }
+    
+    if (!bulkUploadWorkstreamId) {
+        showToast('❌ No workstream selected');
+        return;
+    }
+    
+    const workstream = projectData.workstreams.find(ws => ws.id === bulkUploadWorkstreamId);
+    if (!workstream) {
+        showToast('❌ Workstream not found');
+        return;
+    }
+    
+    if (!workstream.tasks) {
+        workstream.tasks = [];
+    }
+    
+    // Parse the input - support various formats
+    const lines = data.split('\n').filter(line => line.trim());
+    let addedCount = 0;
+    
+    lines.forEach((line, index) => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || trimmedLine.toLowerCase().startsWith('task') || trimmedLine.startsWith('#')) {
+            return; // Skip headers or comments
+        }
+        
+        // Detect delimiter (tab, comma, or pipe)
+        let delimiter = '\t';
+        if (!line.includes('\t')) {
+            if (line.includes('|')) {
+                delimiter = '|';
+            } else if (line.includes(',')) {
+                delimiter = ',';
+            }
+        }
+        
+        const cells = line.split(delimiter).map(c => c.replace(/^"|"$/g, '').trim());
+        
+        // Parse fields: Task Name, Owner, Priority, Size, Start Date, End Date, Risk, Description
+        const taskName = cells[0] || '';
+        const owner = cells[1] || '';
+        const priority = (cells[2] || 'P1').toUpperCase();
+        const size = (cells[3] || 'M').toUpperCase();
+        const startDate = formatDateForInput(cells[4]) || getDefaultStartDate();
+        const endDate = formatDateForInput(cells[5]) || getDefaultEndDate();
+        const risk = (cells[6] || 'none').toLowerCase();
+        const description = cells[7] || '';
+        
+        if (taskName) {
+            workstream.tasks.push({
+                id: Date.now() + index + Math.random() * 1000,
+                name: taskName,
+                description: description,
+                owner: owner,
+                priority: ['P0', 'P1', 'P2'].includes(priority) ? priority : 'P1',
+                size: ['S', 'M', 'L'].includes(size) ? size : 'M',
+                start: startDate,
+                end: endDate,
+                risk: ['none', 'low', 'medium', 'high'].includes(risk) ? risk : 'none',
+                status: 'not-started',
+                riskText: '',
+                comments: []
+            });
+            addedCount++;
+        }
+    });
+    
+    if (addedCount > 0) {
+        extendCalendarForAllTasks();
+        saveData();
+        initCalendarInputs();
+        renderTimeline();
+        closeBulkUploadModal();
+        showToast(`✅ Added ${addedCount} task${addedCount > 1 ? 's' : ''} to workstream!`);
+    } else {
+        showToast('❌ No valid tasks found in input');
+    }
+}
+
+// ==================== VIEW TASK DETAILS ====================
+
+function viewTaskDetails(taskId) {
+    const result = findTask(taskId);
+    if (!result) return;
+    
+    const task = result.task;
+    document.getElementById('viewTaskTitle').textContent = task.name;
+    document.getElementById('viewTaskDescription').textContent = task.description || 'No description added.';
+    document.getElementById('viewTaskOwner').textContent = task.owner || 'Unassigned';
+    document.getElementById('viewTaskPriority').textContent = task.priority;
+    document.getElementById('viewTaskSize').textContent = task.size;
+    document.getElementById('viewTaskStatus').textContent = getStatusLabel(task.status);
+    document.getElementById('viewTaskDates').textContent = `${task.start} → ${task.end}`;
+    document.getElementById('viewTaskRisk').textContent = task.risk === 'none' ? 'None' : getRiskLabel(task.risk);
+    document.getElementById('viewTaskRiskText').textContent = task.riskText || 'No risk details.';
+    
+    // Show/hide risk section based on risk level
+    const riskSection = document.getElementById('viewRiskSection');
+    if (task.risk && task.risk !== 'none') {
+        riskSection.style.display = 'block';
+    } else {
+        riskSection.style.display = 'none';
+    }
+    
+    // Comments
+    const commentsContainer = document.getElementById('viewTaskComments');
+    if (task.comments && task.comments.length > 0) {
+        commentsContainer.innerHTML = task.comments.map(c => `
+            <div class="view-comment">
+                <span class="view-comment-date">${formatCommentDate(c.date)}</span>
+                <span class="view-comment-text">${escapeHtml(c.text)}</span>
+            </div>
+        `).join('');
+    } else {
+        commentsContainer.innerHTML = '<div class="no-comments">No comments yet.</div>';
+    }
+    
+    document.getElementById('viewTaskModal').classList.add('active');
+}
+
+function closeViewTaskModal() {
+    document.getElementById('viewTaskModal').classList.remove('active');
+}
+
 // ==================== DRAG AND DROP ====================
 
 let draggedTaskId = null;
@@ -1024,8 +1172,12 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
                         </div>
                     </div>
                 </div>
-                <input type="text" class="inline-edit task-name-edit" value="${escapeHtml(task.name)}" 
-                       onchange="updateTask(${task.id}, 'name', this.value)" title="${escapeHtml(task.name)}">
+                <div class="task-name-wrapper">
+                    <input type="text" class="inline-edit task-name-edit" value="${escapeHtml(task.name)}" 
+                           onchange="updateTask(${task.id}, 'name', this.value)" title="${escapeHtml(task.name)}">
+                    <button class="btn-view-task" onclick="viewTaskDetails(${task.id})" title="View full details">👁️</button>
+                    <div class="task-name-tooltip">${escapeHtml(task.name)}${task.description ? '<br><span class="tooltip-desc">' + escapeHtml(task.description) + '</span>' : ''}</div>
+                </div>
                 <div class="task-meta">
                     <input type="text" class="owner-input" value="${escapeHtml(task.owner || '')}" 
                            placeholder="Owner" onchange="updateTask(${task.id}, 'owner', this.value)" title="Owner">
@@ -1141,6 +1293,13 @@ function renderTaskRow(task, isSubTask = false, isSubSubTask = false) {
                             </div>
                             <div class="bar-edit-row">
                                 <div class="bar-edit-group" style="flex: 1;">
+                                    <label>Description</label>
+                                    <textarea rows="2" placeholder="Task description..."
+                                              onchange="updateTaskNoRender(${task.id}, 'description', this.value)">${escapeHtml(task.description || '')}</textarea>
+                                </div>
+                            </div>
+                            <div class="bar-edit-row">
+                                <div class="bar-edit-group" style="flex: 1;">
                                     <label>Risk Description</label>
                                     <textarea rows="2" placeholder="Describe the risk..."
                                               onchange="updateTaskNoRender(${task.id}, 'riskText', this.value)">${escapeHtml(task.riskText || '')}</textarea>
@@ -1234,6 +1393,7 @@ function renderWorkstream(workstream, index) {
                            title="Workstream Owner" style="margin-left: 8px;">
                     <div class="workstream-actions">
                         <button onclick="addTaskToWorkstream(${workstream.id})" title="Add Task">➕</button>
+                        <button onclick="openBulkUploadModal(${workstream.id})" title="Bulk Upload Tasks">📋</button>
                         <button onclick="deleteWorkstream(${workstream.id})" title="Delete Workstream">🗑️</button>
                     </div>
                 </div>
@@ -1306,6 +1466,7 @@ document.getElementById('taskForm').addEventListener('submit', function(e) {
     const task = {
         id: Date.now(),
         name: document.getElementById('taskName').value,
+        description: document.getElementById('taskDescription').value,
         priority: document.getElementById('taskPriority').value,
         size: document.getElementById('taskSize').value,
         start: document.getElementById('taskStart').value,
